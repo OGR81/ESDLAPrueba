@@ -1,0 +1,106 @@
+﻿@model ESDLAPrueba.Models.PuntuacionesViewModel
+@using ESDLAPrueba.Models
+
+@{
+    ViewData["Title"] = "Puntuaciones";
+    
+}
+
+<h1>Puntuaciones</h1>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-4.7.0" crossorigin="anonymous" />
+<link rel="stylesheet" href="~/css/custom.css" />
+
+<div class="d-flex justify-content-end align-items-center mb-3">
+    <div class="d-flex align-items-center">
+        <label for="filtro-ronda" class="me-2">Filtrar por Ronda:</label>
+        <select id="filtro-ronda" class="form-control" style="width: 200px;">
+            <option value="">Todas las Rondas</option>
+        </select>
+    </div>
+    <div class="ms-2">
+        <button class="btn btn-primary nueva-puntuacion-btn">Nueva Puntuación</button>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Jugador</th>
+            <th>Punto de partida</th>
+            <th>Puntos de victoria obtenidos</th>
+            <th>Puntos de victoria cedidos</th>
+            <th>Diferencia de puntos de victoria</th>
+            <th>Líder abatido</th>
+            <th>Ronda</th>
+            <th>Opciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var puntuacion in Model.Puntuaciones)
+        {
+            <tr>
+                <td>
+                    <select class="form-control select-jugador editable-select" disabled>
+                        <option value="">Seleccione un jugador</option>
+                        @foreach (var jugador in Model.JugadoresDisponibles)
+                        {
+                            <option value="@jugador">@jugador</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control select-punto-partida editable-select" disabled>
+                        <option value="3">3</option>
+                        <option value="1">1</option>
+                        <option value="0">0</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control select-puntos-victoria-obtenidos editable-select" disabled>
+                        @for (int i = 0; i <= 100; i++)
+                        {
+                            <option value="@i">@i</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control select-puntos-victoria-cedidos editable-select" disabled>
+                        @for (int i = 0; i <= 100; i++)
+                        {
+                            <option value="@i">@i</option>
+                        }
+                    </select>
+                </td>
+                <td class="diferencia-puntos-victoria">@puntuacion.DiferenciaPuntosVictoria</td>
+                <td>
+                    <select class="form-control select-lider-abatido editable-select" disabled>
+                        @for (int i = 0; i <= 100; i++)
+                        {
+                            <option value="@i">@i</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control select-ronda editable-select" disabled>
+                        @for (int i = 0; i <= 100; i++)
+                        {
+                            <option value="@i">@i</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-link editar-btn" title="Editar"><i class="far fa-edit"></i></button>
+                    <button class="btn btn-link eliminar-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
+                    <button class="btn btn-link guardar-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="~/js/custom.js"></script>
+

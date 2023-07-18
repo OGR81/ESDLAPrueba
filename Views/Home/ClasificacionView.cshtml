@@ -1,0 +1,47 @@
+﻿@model ESDLAPrueba.Models.ClasificacionViewModel
+
+@{
+    ViewData["Title"] = "Clasificación";
+}
+
+<h1>Clasificación</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Jugador</th>
+            <th>Total Ptos Victoria Obtenidos</th>
+            <th>Total Ptos Victoria Cedidos</th>
+            <th>Total Dif Ptos Victoria</th>
+            <th>Líderes Abatidos</th>
+            <th>TOTAL</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var jugador in Model.Clasificacion)
+        {
+            <tr>
+                <td>@jugador.Jugador</td>
+                <td>@jugador.TotalPtosVictoriaObtenidos</td>
+                <td>@jugador.TotalPtosVictoriaCedidos</td>
+                <td>@jugador.TotalDifPtosVictoria</td>
+                <td>@jugador.TotalLideresAbatidos</td>
+                <td>@jugador.Total</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

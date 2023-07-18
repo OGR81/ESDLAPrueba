@@ -1,0 +1,9 @@
+﻿.navbar-nav {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+    .navbar-nav .nav-link {
+        text-align: center;
+    }
