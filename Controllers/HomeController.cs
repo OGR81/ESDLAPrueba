@@ -4,23 +4,30 @@ using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Linq;
+using System;
 using ESDLAPrueba.Models;
-
+using ESDLAPrueba.Firebase;
+using ESDLAPrueba;
+using Google.Cloud.Firestore;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace ESDLAPrueba.Controllers
 {
     public class HomeController : Controller
     {
         private readonly IWebHostEnvironment _hostingEnvironment;
-        private List<Participante> _listaParticipantes;
-        
-        public HomeController(IWebHostEnvironment hostingEnvironment)
+        public List<Participante> listaParticipantes { get; set; }
+
+        private readonly FirebaseManager _firebaseManager;
+
+        public HomeController(FirebaseManager firebaseManager)
         {
-            _hostingEnvironment = hostingEnvironment;
-            _listaParticipantes = ObtenerListaParticipantes();
-            
+            _firebaseManager = firebaseManager;
+            listaParticipantes = new List<Participante>();
         }
+        
 
         public IActionResult Index()
         {
@@ -38,18 +45,17 @@ namespace ESDLAPrueba.Controllers
 
         public IActionResult Participantes()
         {
-            var modelo = new ParticipantesViewModel
-            {
-                Participantes = _listaParticipantes
-            };
-
+            var modelo = new ParticipantesViewModel();
+            var lista = ObtenerListaParticipantes();
+            lista.Wait();
+            modelo.Participantes = lista.Result;
             return View("ParticipantesView", modelo);
         }
 
         [HttpPost]
         public IActionResult EditarParticipante(Participante participante)
         {
-            var participanteExistente = _listaParticipantes.Find(p => p.Id == participante.Id);
+            var participanteExistente = listaParticipantes.Find(p => p.Id == participante.Id);
             if (participanteExistente != null)
             {
                 participanteExistente.Nombre = participante.Nombre;
@@ -59,22 +65,36 @@ namespace ESDLAPrueba.Controllers
             return RedirectToAction("Participantes");
         }
 
-        [HttpPost]
-        public IActionResult EliminarParticipante(int id)
+        public async Task<IActionResult> EliminarParticipante(int id)
         {
-            var participanteExistente = _listaParticipantes.Find(p => p.Id == id);
+            Console.WriteLine("Entra en Eliminar el participante con Id: " + id);
+            var participanteExistente = listaParticipantes.Find(p => p.Id == id);
             if (participanteExistente != null)
             {
-                _listaParticipantes.Remove(participanteExistente);
+                // Llama a EliminarParticipanteAsync para eliminar el participante en Firebase
+                await EliminarParticipanteAsync(id);
+
+                // Obtén la lista actualizada de participantes desde Firebase
+                var lista = await ObtenerListaParticipantes();
+                listaParticipantes = lista; // Actualiza la lista local en el controlador
+
+                var modelo = new ParticipantesViewModel();
+                modelo.Participantes = lista;
+
+                // Devuelve la vista con la lista actualizada
+                return View("ParticipantesView", modelo);
             }
 
             return RedirectToAction("Participantes");
         }
+
+
+
 
         [HttpPost]
         public IActionResult GuardarParticipante(Participante participante)
-        {
-            var participanteExistente = _listaParticipantes.Find(p => p.Id == participante.Id);
+        {            
+            var participanteExistente = listaParticipantes.Find(p => p.Id == participante.Id);
             if (participanteExistente != null)
             {
                 participanteExistente.Nombre = participante.Nombre;
@@ -84,14 +104,16 @@ namespace ESDLAPrueba.Controllers
             return RedirectToAction("Participantes");
         }
 
-        private List<Participante> ObtenerListaParticipantes()
+        public async Task <List<Participante>> ObtenerListaParticipantes()
+        { 
+            return await _firebaseManager.GetParticipantes();
+         
+        }
+
+        public async Task EliminarParticipanteAsync(int Id)
         {
-            return new List<Participante>
-            {
-                new Participante { Id = 1, Nombre = "Manolo", Nick = "Alias 1" },
-                new Participante { Id = 2, Nombre = "Pedro", Nick = "Alias 2" },
-                new Participante { Id = 3, Nombre = "Juan", Nick = "Alias 3" }
-            };
+            Console.WriteLine("Dentro de EliminarParticipanteAsync" + Id);
+            await _firebaseManager.DeleteParticipante(Id); 
         }
 
         public IActionResult Puntuaciones()

@@ -8,10 +8,30 @@
         row.find('.guardar-btn').show();
     });
 
-    $(document).on('click', '.eliminar-btn', function () {
-        var row = $(this).closest('tr');
-        row.remove();
+    $(document).ready(function () {
+        // Manejar el clic en el botón "Eliminar"
+        $('#tablaParticipantes').on('click', '.eliminar-participante', function () {
+            var fila = $(this).closest('tr');
+            var idParticipante = fila.find('.id-participante').text(); // Obtener el ID del participante
+
+            // Realizar una solicitud AJAX para eliminar el participante
+            $.ajax({
+                url: '/HomeController/EliminarParticipante', // Asegúrate de que esta sea la URL correcta
+                type: 'POST',
+                data: { id: idParticipante },
+                success: function () {
+                    // Eliminación exitosa, oculta la fila de la tabla
+                    fila.remove();
+                },
+                error: function () {
+                    alert('Hubo un error al eliminar el participante.');
+                }
+            });
+        });
+
+        // Otras funciones y lógica aquí...
     });
+
 
     $(document).on('click', '.guardar-btn', function () {
         var row = $(this).closest('tr');
