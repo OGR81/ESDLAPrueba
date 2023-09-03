@@ -50,7 +50,10 @@ namespace ESDLAPrueba.Firebase
 
             foreach (DocumentSnapshot documentSnapshot in allParticipantesQuerySnapshot.Documents) 
             {
-                participantesList.Add(documentSnapshot.ConvertTo<Participante>());
+                Participante participante = documentSnapshot.ConvertTo<Participante>();
+                participante.Id = documentSnapshot.Id;
+
+                participantesList.Add(participante);
 
             }
 
@@ -58,33 +61,37 @@ namespace ESDLAPrueba.Firebase
                 
         }
 
-        public async Task DeleteParticipante (int id)
+        // Método para eliminar un documento de una colección
+        public async Task EliminarDocumento(string coleccion, string idParticipante)
         {
-            Console.WriteLine("El id es: " + id);
-            Query docRef = _db.Collection("participantes").WhereEqualTo("Id", id).Limit(1);
-            QuerySnapshot snapshot = await docRef.GetSnapshotAsync();
-            if (snapshot.Count > 0)
-            {
-                DocumentReference participanteRef = _db.Collection("participantes").Document(snapshot.ElementAt(0).Id);
-                await participanteRef.DeleteAsync();
-            }
+            Console.WriteLine("El id es: " + idParticipante);
 
+            // Obtener una referencia al documento que deseas eliminar
+            DocumentReference documentRef = _db.Collection(coleccion).Document(idParticipante);
+
+            // Eliminar participante de Firebase
+            await documentRef.DeleteAsync();
         }
 
-        // Método para crear un nuevo documento en una colección
-        public async Task<string> CrearDocumento(string coleccion, object datos)
+        public async Task CrearDocumento(string coleccion, Participante participante)
         {
             // Obtener una referencia a la colección
             CollectionReference collectionRef = _db.Collection(coleccion);
 
-            // Crear un nuevo documento con un ID automático
-            DocumentReference documentRef = await collectionRef.AddAsync(datos);
-
-            // Obtener el ID del nuevo documento
-            string newDocumentId = documentRef.Id;
-
-            return newDocumentId;
+            try
+            {
+                // Agregar el nuevo participante a Firebase Firestore
+                await collectionRef.AddAsync(participante);
+            }
+            catch (Exception ex)
+            {
+                // Manejar cualquier excepción que pueda ocurrir al agregar el documento
+                Console.WriteLine("Error al agregar el participante a Firebase: " + ex.Message);
+                throw; // Puedes decidir cómo manejar esto según las necesidades de tu aplicación
+            }
         }
+
+        
 
         // Método para actualizar un documento existente en una colección
         public async Task ActualizarDocumento(string coleccion, string documentoId, Dictionary<string, object> updates)
@@ -96,15 +103,7 @@ namespace ESDLAPrueba.Firebase
             await documentRef.UpdateAsync(updates);
         }
 
-        // Método para eliminar un documento de una colección
-        public async Task EliminarDocumento(string coleccion, string documentoId)
-        {
-            // Obtener una referencia al documento que deseas eliminar
-            DocumentReference documentRef = _db.Collection(coleccion).Document(documentoId);
-
-            // Realizar la eliminación
-            await documentRef.DeleteAsync();
-        }
+        
 
         
     }

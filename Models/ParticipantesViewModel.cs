@@ -11,12 +11,13 @@ namespace ESDLAPrueba.Models
     [FirestoreData]
     public class Participante
     {
+        //[FirestoreProperty]
+        public string? Id { get; set; }
+        
+        [FirestoreProperty]        
+        public string? Nombre { get; set; }
         [FirestoreProperty]
-        public int Id { get; set; }
-        [FirestoreProperty]
-        public string Nombre { get; set; }
-        [FirestoreProperty]
-        public string Nick { get; set; }
+        public string? Nick { get; set; }
         [FirestoreProperty]
         public bool bandoSeleccionado { get; set; }
         [FirestoreProperty]

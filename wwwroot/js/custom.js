@@ -10,36 +10,75 @@
 
     $(document).ready(function () {
         // Manejar el clic en el botón "Eliminar"
-        $('#tablaParticipantes').on('click', '.eliminar-participante', function () {
-            var fila = $(this).closest('tr');
-            var idParticipante = fila.find('.id-participante').text(); // Obtener el ID del participante
+        $('#tablaParticipantes').on('click', '.eliminar-btn', function () {
+            var idParticipante = $(this).parents("tr").find("input[name='id']").val(); // Obtener el valor de nick
 
-            // Realizar una solicitud AJAX para eliminar el participante
-            $.ajax({
-                url: '/HomeController/EliminarParticipante', // Asegúrate de que esta sea la URL correcta
-                type: 'POST',
-                data: { id: idParticipante },
-                success: function () {
-                    // Eliminación exitosa, oculta la fila de la tabla
-                    fila.remove();
-                },
-                error: function () {
-                    alert('Hubo un error al eliminar el participante.');
-                }
-            });
+            /*if (confirm("¿Desea eliminar el participante?")) {*/
+                console.log("Entra en Eliminar el participante con id: " + idParticipante);
+
+                // Realizar una solicitud AJAX para eliminar el participante
+                $.ajax({
+                    url: '/Home/EliminarParticipante', // Asegúrate de que esta sea la URL correcta
+                    type: 'POST',
+                    data: { idParticipante: idParticipante },
+                    success: function () {
+                        location.reload();
+                    },
+                    error: function () {
+                        alert('Hubo un error al eliminar el participante.');
+                        location.reload();
+                    }
+                });
+           /* }   */       
         });
-
-        // Otras funciones y lógica aquí...
+                
     });
 
 
+    // Cuando se hace clic en "Guardar" en una fila de edición
     $(document).on('click', '.guardar-btn', function () {
         var row = $(this).closest('tr');
-        row.find('.bando-select, .pago-select, .lista-select').prop('disabled', true);
-        row.find('.nombre-input, .nick-input').prop('readonly', true);
+        // Obtén los valores de los campos editables en esta fila
+        var id = row.find('.id-input').val();
+        var nombre = row.find('.nombre-input').val();
+        var nick = row.find('.nick-input').val();
+        var bando = row.find('.bando-select').val();
+        var pago = row.find('.pago-select').val();
+        var lista = row.find('.lista-select').val();
         row.removeClass('editando');
         row.find('.editar-btn').show();
         row.find('.guardar-btn').hide();
+
+        var url = id == undefined ? "/Home/CrearParticipante" : "/Home/EditarParticipante";
+
+        // Crea un objeto de participante con los valores obtenidos
+        var participante = {
+            Id: id,
+            Nombre: nombre,
+            Nick: nick,
+            bandoSeleccionado: bando,
+            pagoAbonado: pago,
+            listaEnviada: lista,
+          
+        };
+
+        // Envía una solicitud al método AñadirParticipante
+        $.ajax({
+            url: url, // Asegúrate de que esta sea la URL correcta
+            type: 'POST',
+            data: participante,
+            success: function () {
+                location.reload();
+            },
+
+            error: function (xhr, status, error) {
+                console.log(error); // Esto mostrará detalles del error en la consola del navegador
+                alert('Hubo un error al agregar el participante.');
+                location.reload();
+            }
+
+        });
+
     });
 
     $(document).on('click', '.nuevo-jugador-btn', function () {
@@ -53,8 +92,8 @@
                 </td>
                 <td>
                     <select class="form-control bando-select editable-select">
-                        <option value="Luz">Luz</option>
-                        <option value="Oscuridad">Oscuridad</option>
+                        <option value="True">Luz</option>
+                        <option value="False">Oscuridad</option>
                     </select>
                 </td>
                 <td>
