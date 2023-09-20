@@ -12,6 +12,9 @@ using ESDLAPrueba.Firebase;
 using ESDLAPrueba;
 using Google.Cloud.Firestore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Google.Protobuf.Collections;
+using Serilog;
+using System.Runtime.Intrinsics.X86;
 
 namespace ESDLAPrueba.Controllers
 {
@@ -19,6 +22,8 @@ namespace ESDLAPrueba.Controllers
     {
         private readonly IWebHostEnvironment _hostingEnvironment;
         public List<Participante> listaParticipantes = new();
+        
+        public List<Puntuacion> listaPuntuaciones = new();
 
         private readonly FirebaseManager _firebaseManager;
 
@@ -41,11 +46,16 @@ namespace ESDLAPrueba.Controllers
 
             return View();
         }
-
+        
+        
         public async Task<IActionResult> Participantes()
         {
             var modelo = new ParticipantesViewModel();
             modelo.Participantes = await ObtenerListaParticipantes(); 
+            //List<Participante> lista = await ObtenerListaParticipantes();
+
+            
+
             return View("ParticipantesView", modelo);
         }
 
@@ -55,13 +65,12 @@ namespace ESDLAPrueba.Controllers
             Console.WriteLine($"Entra en Eliminar el participante con id:{idParticipante}" );
             
             // Llama a EliminarParticipanteAsync para eliminar el participante en Firebase
-            await _firebaseManager.EliminarDocumento("participantes", idParticipante);
+            await _firebaseManager.EliminarDocParticipante("participantes", idParticipante);
 
             // Obtener la lista actualizada de participantes desde Firebase
-            listaParticipantes = await ObtenerListaParticipantes();
-
+            
             var modelo = new ParticipantesViewModel();
-            modelo.Participantes = listaParticipantes;
+            modelo.Participantes = await ObtenerListaParticipantes(); ;
 
 
             // Devuelve la vista con la lista actualizada
@@ -73,12 +82,16 @@ namespace ESDLAPrueba.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest("Error al crear partidipante");
+                return BadRequest("Error al crear participante");
             }
 
-            await _firebaseManager.CrearDocumento("participantes", participante);
+            if (await VerificarNick(participante.Nick, participante.Id))
+            {
+                return Json(new { success = false, message = "El nick ya está en uso" });
+            }
+            await _firebaseManager.CrearDocParticipante("participantes", participante);
             // Si hay errores de validación, vuelve a mostrar la vista actual
-            return Json(new { success = true });
+            return Json(new { success = true, message = "Jugador añadido" });
         }
 
         [HttpPost]
@@ -89,72 +102,127 @@ namespace ESDLAPrueba.Controllers
                 return BadRequest("Error al editar participante");
             }
 
+            if (await VerificarNick(participante.Nick, participante.Id))
+            {
+                return Json(new { success = false, message = "El nick ya está en uso" });
+            }
+
             // Crea un diccionario con los campos a actualizar
             var actualizacion = new Dictionary<string, object>
-                {
-                    { "Nombre", participante?.Nombre },
-                    { "Nick", participante?.Nick },
-                    { "bando", participante.bandoSeleccionado },
-                    { "pago", participante.pagoAbonado },
-                    { "lista", participante.listaEnviada },
+            {
+                { "Nombre", participante?.Nombre },
+                { "Nick", participante?.Nick },
+                { "Bando", participante.Bando },
+                { "PagoAbonado", participante.PagoAbonado },
+                { "ListaEnviada", participante.ListaEnviada },
 
-                };
+            };
 
+            
             // Llama a FirebaseManager para actualizar el participante en Firebase
-            await _firebaseManager.ActualizarDocumento("participantes", participante.Id, actualizacion);
+            await _firebaseManager.ActualizarDocParticipante("participantes", participante.Id, actualizacion);
 
-            return Json(new { success = true});
+            return Json(new { success = true, message = "Jugador modificado" });
         }
 
         private async Task <List<Participante>> ObtenerListaParticipantes()
         { 
             return await _firebaseManager.GetParticipantes();
          
-        }              
-        
-        public IActionResult Puntuaciones()
+        }
+
+        private async Task<bool> VerificarNick(string nick, string idDocumento)
         {
-            // Aquí puedes obtener las puntuaciones de alguna fuente de datos, como una base de datos
-
-            // Por ejemplo, crearemos una lista ficticia de puntuaciones para demostración
-            var puntuaciones = new List<PuntuacionesViewModel>
+            listaParticipantes = await _firebaseManager.GetParticipantesBynick(nick);    
+            if (string.IsNullOrEmpty(idDocumento))
             {
-                new PuntuacionesViewModel { Jugador = "Jugador 1", PuntoPartida = 3, PuntosVictoriaObtenidos = 10, PuntosVictoriaCedidos = 5, LiderAbatido = 0, Ronda = 1 },
-                new PuntuacionesViewModel { Jugador = "Jugador 2", PuntoPartida = 1, PuntosVictoriaObtenidos = 8, PuntosVictoriaCedidos = 6, LiderAbatido = 0, Ronda = 1 },
-                new PuntuacionesViewModel { Jugador = "Jugador 3", PuntoPartida = 0, PuntosVictoriaObtenidos = 12, PuntosVictoriaCedidos = 3, LiderAbatido = 0, Ronda = 1 }
-            };
+                return listaParticipantes.Any();
+            }
+            return listaParticipantes.Where(x=>x.Id!= idDocumento).Any();
+        }
+                
+        
+        public async Task<IActionResult> Puntuaciones()
+        {
+            var modelo = new PuntuacionesViewModel();
+            modelo.Puntuaciones = await ObtenerListaPuntuaciones();
+                        
+            var participantes = await _firebaseManager.GetParticipantes();                        
+            modelo.JugadoresDisponibles = participantes.Select(p => p.Nick).ToList();
+            
+            return View("PuntuacionesView", modelo);
+        }
+        
 
-            // Crea una instancia de PuntuacionViewModel y asigna las puntuaciones obtenidas
-            var puntuacionViewModel = new PuntuacionesViewModel
-            {
-                JugadoresDisponibles = new List<string> { "Jugador 1", "Jugador 2", "Jugador 3" }, // Puedes obtener la lista de jugadores desde alguna fuente de datos
-                Puntuaciones = puntuaciones // Asigna la lista de puntuaciones al modelo
-            };
+        private async Task<List<Puntuacion>> ObtenerListaPuntuaciones()
+        {
+            return await _firebaseManager.GetPuntuaciones();
 
-            return View("PuntuacionesView", puntuacionViewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EliminarPuntuacion(string idPuntuacion)
+        {
+            Console.WriteLine($"Entra en Eliminar el participante con id:{idPuntuacion}");
+
+            // Llama a EliminarParticipanteAsync para eliminar el participante en Firebase
+            await _firebaseManager.EliminarDocPuntuacion("puntuaciones", idPuntuacion);
+
+            // Obtener la lista actualizada de participantes desde Firebase
+
+            var modelo = new PuntuacionesViewModel();
+            modelo.Puntuaciones = await ObtenerListaPuntuaciones(); ;
+
+
+            // Devuelve la vista con la lista actualizada
+            return Json(new { success = true });
         }
 
 
-        public IActionResult Clasificacion()
+        [HttpPost]
+        public async Task<IActionResult> CrearPuntuacion(Puntuacion puntuacion)
         {
-            // Obtén las puntuaciones de alguna fuente de datos, como una base de datos
-            // Aquí puedes utilizar la misma lógica que tienes en la acción Puntuaciones
-
-            // Por ejemplo, supongamos que tienes la lista de puntuaciones en el modelo PuntuacionesViewModel
-            var puntuaciones = new List<PuntuacionesViewModel>
+            if (!ModelState.IsValid)
             {
-                new PuntuacionesViewModel { Jugador = "Jugador 1", PuntoPartida = 1, PuntosVictoriaObtenidos = 10, PuntosVictoriaCedidos = 5, LiderAbatido = 2, Ronda = 1 },
-                new PuntuacionesViewModel { Jugador = "Jugador 2", PuntoPartida = 3, PuntosVictoriaObtenidos = 8, PuntosVictoriaCedidos = 6, LiderAbatido = 3, Ronda = 1 },
-                new PuntuacionesViewModel { Jugador = "Jugador 3", PuntoPartida = 0, PuntosVictoriaObtenidos = 12, PuntosVictoriaCedidos = 3, LiderAbatido = 4, Ronda = 1 },
-                new PuntuacionesViewModel { Jugador = "Jugador 1", PuntoPartida = 1, PuntosVictoriaObtenidos = 10, PuntosVictoriaCedidos = 5, LiderAbatido = 1, Ronda = 2 },
-                new PuntuacionesViewModel { Jugador = "Jugador 2", PuntoPartida = 3, PuntosVictoriaObtenidos = 8, PuntosVictoriaCedidos = 6, LiderAbatido = 5, Ronda = 2 },
-                new PuntuacionesViewModel { Jugador = "Jugador 3", PuntoPartida = 3, PuntosVictoriaObtenidos = 12, PuntosVictoriaCedidos = 3, LiderAbatido = 4, Ronda = 2 },
-                new PuntuacionesViewModel { Jugador = "Jugador 1", PuntoPartida = 0, PuntosVictoriaObtenidos = 10, PuntosVictoriaCedidos = 5, LiderAbatido = 6, Ronda = 3 },
-                new PuntuacionesViewModel { Jugador = "Jugador 2", PuntoPartida = 3, PuntosVictoriaObtenidos = 8, PuntosVictoriaCedidos = 6, LiderAbatido = 3, Ronda = 3 },
-                new PuntuacionesViewModel { Jugador = "Jugador 3", PuntoPartida = 1, PuntosVictoriaObtenidos = 12, PuntosVictoriaCedidos = 3, LiderAbatido = 2, Ronda = 3 }
+                return BadRequest("Error al introducir la puntuación");
+            }
+                        
+            await _firebaseManager.CrearDocPuntuacion("puntuaciones", puntuacion);
+            // Si hay errores de validación, vuelve a mostrar la vista actual
+            return Json(new { success = true, message = "Puntuación introducida" });
+        }
+        
+        [HttpPost]
+        public async Task<IActionResult> EditarPuntuacion(Puntuacion puntuacion)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Error al editar la puntuación");
+            }
+                        
+            // Crea un diccionario con los campos a actualizar
+            var actualizacion = new Dictionary<string, object>
+            {                
+                { "Nick", puntuacion?.Nick },
+                { "PuntoPartida", puntuacion.PuntoPartida },
+                { "PuntosVictoriaObtenidos", puntuacion.PuntosVictoriaObtenidos },
+                { "PuntosVictoriaCedidos", puntuacion.PuntosVictoriaCedidos },
+                { "DiferenciaPuntosVictoria", puntuacion.DiferenciaPuntosVictoria },
+                { "LiderAbatido", puntuacion.LiderAbatido },
+                { "Ronda", puntuacion.Ronda },
             };
 
 
+            // Llama a FirebaseManager para actualizar el participante en Firebase
+            await _firebaseManager.ActualizarDocPuntuacion("puntuaciones", puntuacion.Id, actualizacion);
+
+            return Json(new { success = true, message = "Puntuación modificada" });
+        }
+
+
+        /*public IActionResult Clasificacion()
+        {
+            
             // Agrupa las puntuaciones por jugador
             var puntuacionesPorJugador = puntuaciones.GroupBy(p => p.Jugador);
 
@@ -192,7 +260,7 @@ namespace ESDLAPrueba.Controllers
             };
 
             return View("ClasificacionView", clasificacionViewModel);
-        }
+        }*/
 
 
 
@@ -224,7 +292,7 @@ namespace ESDLAPrueba.Controllers
             return View("EscenariosView", viewModel);
         }
 
-        //private List<Participante> MapParticipantesToModel(listaParticipantes)
+        
 
     }
 

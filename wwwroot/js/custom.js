@@ -4,8 +4,8 @@
         row.find('.bando-select, .pago-select, .lista-select').prop('disabled', false);
         row.find('.nombre-input, .nick-input').prop('readonly', false);
         row.addClass('editando');
-        row.find('.editar-btn').hide();
-        row.find('.guardar-btn').show();
+        row.find('.editar-btn').show();
+        row.find('.guardar-btn').hide();
     });
 
     $(document).ready(function () {
@@ -13,23 +13,39 @@
         $('#tablaParticipantes').on('click', '.eliminar-btn', function () {
             var idParticipante = $(this).parents("tr").find("input[name='id']").val(); // Obtener el valor de nick
 
-            /*if (confirm("¿Desea eliminar el participante?")) {*/
-                console.log("Entra en Eliminar el participante con id: " + idParticipante);
+            Swal.fire({
+                title: '¿Estás seguro de que quieres eliminar el jugador?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí',
+                cancelButtonText: 'Cancelar',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/Home/EliminarParticipante',
+                        type: 'POST',
+                        data: { idParticipante: idParticipante },
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Jugador eliminado',
 
-                // Realizar una solicitud AJAX para eliminar el participante
-                $.ajax({
-                    url: '/Home/EliminarParticipante', // Asegúrate de que esta sea la URL correcta
-                    type: 'POST',
-                    data: { idParticipante: idParticipante },
-                    success: function () {
-                        location.reload();
-                    },
-                    error: function () {
-                        alert('Hubo un error al eliminar el participante.');
-                        location.reload();
-                    }
-                });
-           /* }   */       
+                            });
+                            location.reload();
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Hubo un error al eliminar el participante',
+
+                            });
+                            location.reload();
+                        }
+                    });
+                } else {
+                    location.reload();
+                }
+            });       
         });
                 
     });
@@ -56,27 +72,40 @@
             Id: id,
             Nombre: nombre,
             Nick: nick,
-            bandoSeleccionado: bando,
-            pagoAbonado: pago,
-            listaEnviada: lista,
+            Bando: bando,
+            PagoAbonado: pago,
+            ListaEnviada: lista
           
         };
 
         // Envía una solicitud al método AñadirParticipante
         $.ajax({
-            url: url, // Asegúrate de que esta sea la URL correcta
+            url: url, // URL correcta para la operación
             type: 'POST',
             data: participante,
-            success: function () {
-                location.reload();
+            success: function (response) {
+                if (response.success) {
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: "Guardado",
+                        text: response.message,
+                    });
+                    
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message,
+                    });
+                }
+                location.reload()
             },
-
             error: function (xhr, status, error) {
-                console.log(error); // Esto mostrará detalles del error en la consola del navegador
+                console.log(error);
                 alert('Hubo un error al agregar el participante.');
                 location.reload();
             }
-
         });
 
     });
@@ -129,12 +158,13 @@
 });
 
 $(document).ready(function () {
-    function actualizarDiferenciaPuntosVictoria(row) {
+    $(document).on('input', '.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos', function () {
+        var row = $(this).closest('tr');
         var puntosObtenidos = parseInt(row.find('.select-puntos-victoria-obtenidos').val());
         var puntosCedidos = parseInt(row.find('.select-puntos-victoria-cedidos').val());
         var diferenciaPuntosVictoria = puntosObtenidos - puntosCedidos;
         row.find('.diferencia-puntos-victoria').text(diferenciaPuntosVictoria);
-    }
+    });
 
     function actualizarOpcionesFiltroRonda() {
         var rondas = obtenerRondasDisponibles();
@@ -163,79 +193,176 @@ $(document).ready(function () {
         filtrarPorRonda($(this).val()); // Filtrar al cambiar la selección del filtro
     });
 
-    $(document).on('input', '.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos', function () {
+    /*$(document).on('input', '.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos', function () {
         var row = $(this).closest('tr');
         actualizarDiferenciaPuntosVictoria(row);
-    });
+    });*/
 
     $(document).on('click', '.editar-btn', function () {
         var row = $(this).closest('tr');
-        row.find('.select-jugador, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', false);
+        row.find('.select-nick, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', false);
         row.addClass('editando');
         row.find('.editar-btn').hide();
         row.find('.guardar-btn').show();
     });
 
-    $(document).on('click', '.eliminar-btn', function () {
-        var row = $(this).closest('tr');
-        row.remove();
-        actualizarOpcionesFiltroRonda();
-        filtrarPorRonda($('#filtro-ronda').val()); // Filtrar al eliminar una fila
+    $(document).ready(function () {        
+        $('#tablaPuntuaciones').on('click', '.eliminar-btn', function () {
+            var idPuntuacion = $(this).parents("tr").find("input[name='id']").val(); 
+
+            Swal.fire({
+                title: '¿Estás seguro de que quieres eliminar la puntuación?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí',
+                cancelButtonText: 'Cancelar',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/Home/EliminarPuntuacion',
+                        type: 'POST',
+                        data: { idPuntuacion: idPuntuacion },
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Puntuación eliminada',
+
+                            });
+                            location.reload();
+                        },
+                        error: function () {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Hubo un error al eliminar la puntuación',
+
+                            });
+                            location.reload();
+                        }
+                    });
+                } else {
+                    location.reload();
+                }
+            });
+        });
+
     });
 
     $(document).on('click', '.guardar-btn', function () {
-        var row = $(this).closest('tr');
-        row.find('.select-jugador, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', true);
+        var row = $(this).closest('tr');                
+        var id = row.find('.id-input').val();
+        var nick = row.find('.select-nick').val();
+        var ptoPartida = row.find('.select-punto-partida').val();
+        var ptoVicObtenidos = row.find('.select-puntos-victoria-obtenidos').val();
+        var ptoVicCedidos = row.find('.select-puntos-victoria-cedidos').val();
+        var difPtosVic = row.find('.diferencia-puntos-victoria').val();
+        var liderAbatido = row.find('.select-lider-abatido').val();
+        var ronda = row.find('.select-ronda').val();
         row.removeClass('editando');
         row.find('.editar-btn').show();
         row.find('.guardar-btn').hide();
-    });
+
+        var url = id == undefined ? "/Home/CrearPuntuacion" : "/Home/EditarPuntuacion";
+
+        // Crea un objeto de puntuación con los valores obtenidos
+        var puntuacion = {
+            Id: id,
+            Nick: nick,
+            PuntoPartida: ptoPartida,
+            PuntosVictoriaObtenidos: ptoVicObtenidos,
+            PuntosVictoriaCedidos: ptoVicCedidos,
+            DiferenciaPuntosVictoria: difPtosVic,
+            LiderAbatido: liderAbatido,
+            Ronda: ronda
+
+        };
+
+        // Envía una solicitud al método AñadirPuntuación
+        $.ajax({
+            url: url, // URL correcta para la operación
+            type: 'POST',
+            data: puntuacion,
+            success: function (response) {
+                if (response.success) {
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: "Guardada",
+                        text: response.message,
+                    });
+
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message,
+                    });
+                }
+                location.reload()
+            },
+            error: function (xhr, status, error) {
+                console.log(error);
+                alert('Hubo un error al agregar la puntuacion.');
+                location.reload();
+            }
+        });
+
+    });    
 
     $(document).on('click', '.nueva-puntuacion-btn', function () {
-        var jugadoresDisponibles = obtenerJugadoresDisponibles();
+        // Obtener la lista de jugadores disponibles desde el elemento oculto
+        var jugadoresDisponibles = $('#jugadores-disponibles').text().split(',');
+
         var newRowHtml = `
-      <tr>
-        <td>
-          <select class="form-control select-jugador editable-select">
-            ${generarOpcionesSelect(jugadoresDisponibles)}
-          </select>
-        </td>
-        <td>
-          <select class="form-control select-punto-partida editable-select">
-            <option value="3">3</option>
-            <option value="1">1</option>
-            <option value="0">0</option>
-          </select>
-        </td>
-        <td>
-          <select class="form-control select-puntos-victoria-obtenidos editable-select">
-            ${generarOpcionesSelect(0, 100)}
-          </select>
-        </td>
-        <td>
-          <select class="form-control select-puntos-victoria-cedidos editable-select">
-            ${generarOpcionesSelect(0, 100)}
-          </select>
-        </td>
-        <td>
-          <span class="diferencia-puntos-victoria"></span>
-        </td>
-        <td>
-          <select class="form-control select-lider-abatido editable-select">
-            ${generarOpcionesSelect(0, 100)}
-          </select>
-        </td>
-        <td>
-          <select class="form-control select-ronda editable-select">
-            ${generarOpcionesSelect(0, 100)}
-          </select>
-        </td>
-        <td>
-          <button class="btn btn-link editar-btn" title="Editar"><i class="far fa-edit"></i></button>
-          <button class="btn btn-link eliminar-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
-          <button class="btn btn-link guardar-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
-        </td>
-      </tr>
+        <tr>
+            <td>
+                <select class="form-control select-nick editable-select">
+                    <option value="">Seleccione un jugador</option>`;
+
+        // Generar opciones para cada jugador disponible
+        jugadoresDisponibles.forEach(function (nick) {
+            newRowHtml += `
+            <option value="${nick}">${nick}</option>`;
+        });
+
+        newRowHtml += `
+                </select>
+            </td>
+            <td>
+                <select class="form-control select-punto-partida editable-select">
+                    <option value="3">3</option>
+                    <option value="1">1</option>
+                    <option value="0">0</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-control select-puntos-victoria-obtenidos editable-select">
+                    ${generarOpcionesSelect(0, 100)}
+                </select>
+            </td>
+            <td>
+                <select class="form-control select-puntos-victoria-cedidos editable-select">
+                    ${generarOpcionesSelect(0, 100)}
+                </select>
+            </td>
+            <td>
+                <span class="diferencia-puntos-victoria"></span>
+            </td>
+            <td>
+                <select class="form-control select-lider-abatido editable-select">
+                    ${generarOpcionesSelect(0, 100)}
+                </select>
+            </td>
+            <td>
+                <select class="form-control select-ronda editable-select">
+                    ${generarOpcionesSelect(0, 100)}
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-link editar-btn" title="Editar"><i class="far fa-edit"></i></button>
+                <button class="btn btn-link eliminar-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
+                <button class="btn btn-link guardar-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
+            </td>
+        </tr>
     `;
 
         // Agregar la nueva fila al final de la tabla
@@ -243,29 +370,18 @@ $(document).ready(function () {
 
         // Habilitar la edición en la nueva fila
         var newRow = $('table tbody tr:last-child');
-        newRow.find('.select-jugador, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', false);
+        newRow.find('.select-nick, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', false);
         newRow.addClass('editando');
         newRow.find('.editar-btn').hide();
         newRow.find('.guardar-btn').show();
 
         // Asignar evento 'input' a los nuevos elementos
-        newRow.find('.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos').on('input', function () {
+        /*newRow.find('.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos').on('input', function () {
             actualizarDiferenciaPuntosVictoria(newRow);
-        });
+        });*/
 
         actualizarOpcionesFiltroRonda();
-    });
-
-    function obtenerJugadoresDisponibles() {
-        var jugadores = [];
-        $('.select-jugador').each(function () {
-            var jugadorSeleccionado = $(this).val();
-            if (jugadorSeleccionado !== '') {
-                jugadores.push(jugadorSeleccionado);
-            }
-        });
-        return jugadores;
-    }
+    });    
 
     function obtenerRondasDisponibles() {
         var rondas = new Set();
@@ -303,7 +419,7 @@ $(document).ready(function () {
 
 
     // Calcular la diferencia de puntos de victoria al cargar la página
-    actualizarDiferenciaPuntosVictoria($('table tbody tr'));
+    //actualizarDiferenciaPuntosVictoria($('table tbody tr'));
 });
 
 

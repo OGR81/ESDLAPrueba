@@ -96,6 +96,32 @@ button[type="submit"]:hover {
 }
 
 
+/* Cambia el color de fondo del cuerpo de la alerta */
+.swal2-popup {
+    background-color: #fff;
+}
+
+/* Cambia el color del título de la alerta */
+.swal2-title {
+    color: #333;
+}
+
+/* Cambia el color del texto del cuerpo de la alerta */
+.swal2-content {
+    color: #555;
+}
+
+/* Cambia el color del botón de confirmación */
+.swal2-confirm {
+    background-color: #007bff;
+    color: #fff;
+}
+
+/* Cambia el color del botón de cancelar */
+.swal2-cancel {
+    background-color: #ccc;
+    color: #333;
+}
 
 
 

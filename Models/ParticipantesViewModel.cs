@@ -19,11 +19,11 @@ namespace ESDLAPrueba.Models
         [FirestoreProperty]
         public string? Nick { get; set; }
         [FirestoreProperty]
-        public bool bandoSeleccionado { get; set; }
+        public string? Bando { get; set; }
         [FirestoreProperty]
-        public bool listaEnviada { get; set; }
+        public string? ListaEnviada { get; set; }
         [FirestoreProperty]
-        public bool pagoAbonado { get; set; } 
+        public string? PagoAbonado { get; set; } 
     }
 
 

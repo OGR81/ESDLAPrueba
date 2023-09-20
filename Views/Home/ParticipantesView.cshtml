@@ -41,34 +41,24 @@
                     <td>
                         <input type="text" name="nick-input" class="form-control nick-input editable-input" value="@participante.Nick" readonly/>
                     </td>
-                    <td>
-                        @{
-                            var bandoSeleccionado = true;
-                            var otroBando = false;
-                        }
+                    <td>                                                
                         <select class="form-control bando-select editable-select" disabled>
-                            <option value="@bandoSeleccionado.ToString()" selected>@(bandoSeleccionado ? "Luz" : "Oscuridad")</option>
-                            <option value="@otroBando.ToString()">@(!bandoSeleccionado ? "Luz" : "Oscuridad")</option>
+                            <option value="true" selected="@(participante.Bando == "true")">Luz</option>
+                            <option value="false" selected="@(participante.Bando == "false")">Oscuridad</option>
                         </select>
                     </td>
                     <td>
-                        @{
-                            var pagoAbonado = true;
-                            var noPago = false;
-                        }
+                        
                         <select class="form-control pago-select editable-select" disabled>
-                            <option value="@pagoAbonado.ToString()" selected>@(pagoAbonado ? "Sí" : "No")</option>
-                            <option value="@noPago.ToString()">@(!pagoAbonado ? "Sí" : "No")</option>
+                            <option value="true" selected="@(participante.PagoAbonado == "true")">Sí</option>
+                            <option value="false" selected="@(participante.PagoAbonado == "false")">No</option>
                         </select>
+                        
                     </td>
-                    <td>
-                        @{
-                            var listaEnviada = true;
-                            var noLista = false;
-                        }
+                    <td>   
                         <select class="form-control lista-select editable-select" disabled>
-                            <option value="@listaEnviada.ToString()" selected>@(listaEnviada ? "Sí" : "No")</option>
-                            <option value="@noLista.ToString()">@(!listaEnviada ? "Sí" : "No")</option>
+                            <option value="true" selected="@(participante.ListaEnviada == "true")">Sí</option>
+                            <option value="false" selected="@(participante.ListaEnviada == "false")">No</option>
                         </select>
                     </td>
                     <td>
@@ -90,6 +80,7 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="~/js/custom.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
 
