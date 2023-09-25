@@ -1,37 +1,27 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
-using System;
-using ESDLAPrueba.Models;
-using ESDLAPrueba.Firebase;
-using ESDLAPrueba;
-using Google.Cloud.Firestore;
-using Microsoft.EntityFrameworkCore.Internal;
-using Google.Protobuf.Collections;
-using Serilog;
-using System.Runtime.Intrinsics.X86;
+﻿using Microsoft.AspNetCore.Mvc;
+using MESBG.Models;
+using MESBG.Firebase;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
-namespace ESDLAPrueba.Controllers
+
+namespace MESBG.Controllers
 {
     public class HomeController : Controller
-    {
-        private readonly IWebHostEnvironment _hostingEnvironment;
+    {        
         public List<Participante> listaParticipantes = new();
         
         public List<Puntuacion> listaPuntuaciones = new();
 
+        private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly FirebaseManager _firebaseManager;
 
-        public HomeController(FirebaseManager firebaseManager)
+        public HomeController(IWebHostEnvironment hostingEnvironment, FirebaseManager firebaseManager)
         {
+            _hostingEnvironment = hostingEnvironment;
             _firebaseManager = firebaseManager;
         }
-        
+
 
         public IActionResult Index()
         {
@@ -220,26 +210,27 @@ namespace ESDLAPrueba.Controllers
         }
 
 
-        /*public IActionResult Clasificacion()
+        public async Task<IActionResult> Clasificacion()
         {
-            
-            // Agrupa las puntuaciones por jugador
-            var puntuacionesPorJugador = puntuaciones.GroupBy(p => p.Jugador);
+            var puntuaciones = await ObtenerListaPuntuaciones();
+
+            // Agrupa las puntuaciones por nick
+            var puntuacionesPorJugador = puntuaciones.GroupBy(p => p.Nick);
 
             // Calcula los totales por jugador
-            var clasificacion = new List<ClasificacionJugadorViewModel>();
+            var clasificacion = new List<ClasificacionJugador>();
             foreach (var grupo in puntuacionesPorJugador)
             {
-                var jugador = grupo.Key;
+                var nick = grupo.Key;
                 var totalPtosVictoriaObtenidos = grupo.Sum(p => p.PuntosVictoriaObtenidos);
                 var totalPtosVictoriaCedidos = grupo.Sum(p => p.PuntosVictoriaCedidos);
                 var totalDifPtosVictoria = totalPtosVictoriaObtenidos - totalPtosVictoriaCedidos;
                 var totalLideresAbatidos = grupo.Sum(p => p.LiderAbatido);
                 var total = grupo.Sum(p => p.PuntoPartida);
 
-                var clasificacionJugador = new ClasificacionJugadorViewModel
+                var clasificacionJugador = new ClasificacionJugador
                 {
-                    Jugador = jugador,
+                    Nick = nick,
                     TotalPtosVictoriaObtenidos = totalPtosVictoriaObtenidos,
                     TotalPtosVictoriaCedidos = totalPtosVictoriaCedidos,
                     TotalDifPtosVictoria = totalDifPtosVictoria,
@@ -260,12 +251,8 @@ namespace ESDLAPrueba.Controllers
             };
 
             return View("ClasificacionView", clasificacionViewModel);
-        }*/
-
-
-
-
-
+        }
+        
         public IActionResult Escenarios(string carpetaSeleccionada)
         {
             var viewModel = new EscenariosViewModel();

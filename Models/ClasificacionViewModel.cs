@@ -1,19 +1,30 @@
 ﻿using System.Collections.Generic;
+using Google.Cloud.Firestore;
 
-namespace ESDLAPrueba.Models
+namespace MESBG.Models
 {
     public class ClasificacionViewModel
     {
-        public List<ClasificacionJugadorViewModel> Clasificacion { get; set; } = new List<ClasificacionJugadorViewModel>();
+        public List<ClasificacionJugador> Clasificacion { get; set; }       
+
     }
 
-    public class ClasificacionJugadorViewModel
+    [FirestoreData]
+    public class ClasificacionJugador
     {
-        public string? Jugador { get; set; }
+        public string? Id { get; set; }
+
+        [FirestoreProperty]
+        public string? Nick { get; set; }
+        [FirestoreProperty]
         public int TotalPtosVictoriaObtenidos { get; set; }
+        [FirestoreProperty]
         public int TotalPtosVictoriaCedidos { get; set; }
+        [FirestoreProperty]
         public int TotalDifPtosVictoria { get; set; }
+        [FirestoreProperty]
         public int TotalLideresAbatidos { get; set; }
+        [FirestoreProperty]
         public int Total { get; set; }
     }
 }

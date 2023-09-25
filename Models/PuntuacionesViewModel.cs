@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Google.Cloud.Firestore;
 
-namespace ESDLAPrueba.Models
+namespace MESBG.Models
 {
     public class PuntuacionesViewModel
     {

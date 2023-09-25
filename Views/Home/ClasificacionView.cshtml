@@ -1,4 +1,5 @@
-﻿@model ESDLAPrueba.Models.ClasificacionViewModel
+﻿@model MESBG.Models.ClasificacionViewModel
+@using MESBG.Models
 
 @{
     ViewData["Title"] = "Clasificación";
@@ -18,15 +19,15 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var jugador in Model.Clasificacion)
+        @foreach (var clasificacionJugador in Model.Clasificacion)
         {
             <tr>
-                <td>@jugador.Jugador</td>
-                <td>@jugador.TotalPtosVictoriaObtenidos</td>
-                <td>@jugador.TotalPtosVictoriaCedidos</td>
-                <td>@jugador.TotalDifPtosVictoria</td>
-                <td>@jugador.TotalLideresAbatidos</td>
-                <td>@jugador.Total</td>
+                <td>@clasificacionJugador.Nick</td>
+                <td>@clasificacionJugador.TotalPtosVictoriaObtenidos</td>
+                <td>@clasificacionJugador.TotalPtosVictoriaCedidos</td>
+                <td>@clasificacionJugador.TotalDifPtosVictoria</td>
+                <td>@clasificacionJugador.TotalLideresAbatidos</td>
+                <td>@clasificacionJugador.Total</td>
             </tr>
         }
     </tbody>

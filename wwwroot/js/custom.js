@@ -110,6 +110,85 @@
 
     });
 
+    $(document).on('click', '.emparejamiento-btn', function () {
+        // Obtén la lista de jugadores y sus bandos de la tabla
+        var jugadores = obtenerListaJugadoresConBando();
+
+        // Verifica que haya al menos dos jugadores para emparejar
+        if (jugadores.length < 2) {
+            Swal.fire('Error', 'Debe haber al menos dos jugadores para emparejar.', 'error');
+            return;
+        }
+
+        // Obtén los emparejamientos respetando los bandos
+        var emparejamientos = obtenerEmparejamientosConBando(jugadores);
+
+        var modalContent = '<div id="resultadoEmparejamiento">';
+        modalContent += '<h2>Emparejamientos</h2>';        
+        modalContent += '<ul style="list-style-type: none;">';
+        emparejamientos.forEach(function (emparejamiento) {
+            modalContent += '<li>' + emparejamiento.Jugador1 + ' vs. ' + emparejamiento.Jugador2 + '</li>';
+        });
+        modalContent += '</ul>';
+        modalContent += '</div>';
+
+        Swal.fire({            
+            html: modalContent,
+            confirmButtonText: 'Cerrar',
+        });
+    });
+
+    function obtenerListaJugadoresConBando() {
+        var jugadores = [];
+
+        $('#tablaParticipantes tbody tr').each(function () {
+            var jugador = {
+                Nick: $(this).find('.nick-input').val(),
+                Bando: $(this).find('.bando-select').val() === 'true'
+            };
+            jugadores.push(jugador);
+        });
+
+        return jugadores;
+    }
+
+    function obtenerEmparejamientosConBando(jugadores) {
+        // Separa a los jugadores por bando
+        var jugadoresBandoLuz = jugadores.filter(function (jugador) {
+            return jugador.Bando === true;
+        });
+
+        var jugadoresBandoOscuridad = jugadores.filter(function (jugador) {
+            return jugador.Bando === false;
+        });
+
+        // Mezcla aleatoriamente los jugadores en cada bando
+        var jugadoresMezcladosLuz = shuffleArray(jugadoresBandoLuz);
+        var jugadoresMezcladosOscuridad = shuffleArray(jugadoresBandoOscuridad);
+
+        // Crea los emparejamientos alternando entre los bandos
+        var emparejamientos = [];
+
+        for (var i = 0; i < Math.min(jugadoresMezcladosLuz.length, jugadoresMezcladosOscuridad.length); i++) {
+            var emparejamiento = {
+                Jugador1: jugadoresMezcladosLuz[i].Nick,
+                Jugador2: jugadoresMezcladosOscuridad[i].Nick
+            };
+            emparejamientos.push(emparejamiento);
+        }
+
+        return emparejamientos;
+    }
+
+    function shuffleArray(array) {
+        for (var i = array.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+        
     $(document).on('click', '.nuevo-jugador-btn', function () {
         var newRowHtml = `
             <tr>
@@ -191,12 +270,7 @@ $(document).ready(function () {
 
     $('#filtro-ronda').on('change', function () {
         filtrarPorRonda($(this).val()); // Filtrar al cambiar la selección del filtro
-    });
-
-    /*$(document).on('input', '.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos', function () {
-        var row = $(this).closest('tr');
-        actualizarDiferenciaPuntosVictoria(row);
-    });*/
+    });    
 
     $(document).on('click', '.editar-btn', function () {
         var row = $(this).closest('tr');
@@ -286,7 +360,7 @@ $(document).ready(function () {
 
                     Swal.fire({
                         icon: 'success',
-                        title: "Guardada",
+                        title: "Puntuación guardada",
                         text: response.message,
                     });
 
@@ -374,12 +448,7 @@ $(document).ready(function () {
         newRow.addClass('editando');
         newRow.find('.editar-btn').hide();
         newRow.find('.guardar-btn').show();
-
-        // Asignar evento 'input' a los nuevos elementos
-        /*newRow.find('.select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos').on('input', function () {
-            actualizarDiferenciaPuntosVictoria(newRow);
-        });*/
-
+        
         actualizarOpcionesFiltroRonda();
     });    
 
@@ -416,11 +485,9 @@ $(document).ready(function () {
             $('table tbody tr').show();
         }
     }
-
-
-    // Calcular la diferencia de puntos de victoria al cargar la página
-    //actualizarDiferenciaPuntosVictoria($('table tbody tr'));
+    
 });
+
 
 
 

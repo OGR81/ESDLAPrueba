@@ -1,21 +1,8 @@
-﻿{
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:10577",
-      "sslPort": 44334
-    }
-  },
+{
   "profiles": {
-    "ESDLAPrueba": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "applicationUrl": "https://localhost:7275;http://localhost:5054",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -23,6 +10,14 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:10577",
+      "sslPort": 44334
     }
   }
 }

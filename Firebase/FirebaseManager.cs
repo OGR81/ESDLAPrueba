@@ -2,14 +2,14 @@
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
-using ESDLAPrueba.Models;
+using MESBG.Models;
 using System.Collections.Generic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ESDLAPrueba.Firebase
+namespace MESBG.Firebase
 {
     public class FirebaseManager
     {
@@ -212,6 +212,51 @@ namespace ESDLAPrueba.Firebase
             await documentRef.UpdateAsync(updates);
         }
 
+        public async Task<List<ClasificacionJugador>> GetClasificacion()
+        {
+            // Obtener una referencia a la colección
+            var clasificacionList = new List<ClasificacionJugador>();
+            Query allClasificacionQuery = _db.Collection("clasificacion");
+            QuerySnapshot allClasificacionQuerySnapshot = await allClasificacionQuery.GetSnapshotAsync();
+
+            foreach (DocumentSnapshot documentSnapshot in allClasificacionQuerySnapshot.Documents)
+            {
+                ClasificacionJugador clasificacionJugador = new ClasificacionJugador
+                {
+                    Id = documentSnapshot.Id,
+                    Nick = documentSnapshot.GetValue<string>("Nick"),
+                    TotalPtosVictoriaObtenidos = documentSnapshot.GetValue<int>("TotalPtosVictoriaObtenidos"),
+                    TotalPtosVictoriaCedidos = documentSnapshot.GetValue<int>("TotalPtosVictoriaCedidos"),
+                    TotalDifPtosVictoria = documentSnapshot.GetValue<int>("TotalDifPtosVictoria"),
+                    TotalLideresAbatidos = documentSnapshot.GetValue<int>("TotalLideresAbatidos"),
+                    Total = documentSnapshot.GetValue<int>("Total")
+                };
+                clasificacionList.Add(clasificacionJugador);
+            }
+
+            return clasificacionList;
+
+        }
+
+        public async Task<List<ClasificacionJugador>> GetClasificacionBytotal(int total)
+        {
+            // Obtener una referencia a la colección
+            var clasificacionList = new List<ClasificacionJugador>();
+            Query clasificacionQuery = _db.Collection("clasificacion").WhereEqualTo("Total", total);
+            QuerySnapshot clasificacionQuerySnapshot = await clasificacionQuery.GetSnapshotAsync();
+
+            foreach (DocumentSnapshot documentSnapshot in clasificacionQuerySnapshot.Documents)
+            {
+                ClasificacionJugador clasificacionJugador = documentSnapshot.ConvertTo<ClasificacionJugador>();
+                clasificacionJugador.Id = documentSnapshot.Id;
+
+                clasificacionList.Add(clasificacionJugador);
+
+            }
+
+            return clasificacionList;
+
+        }
 
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace ESDLAPrueba.Models
+﻿namespace MESBG.Models
 {
     public class HomeViewModel
     {
