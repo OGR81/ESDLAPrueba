@@ -1,4 +1,72 @@
 ﻿$(document).ready(function () {
+    // Abre la modal para crear o editar evento al hacer clic en el enlace "Nuevo evento"
+    $('.nuevo-evento-link').click(function () {
+        // Restablece la modal para que sea una nueva creación de evento
+        $('#modalEventoTitle').text('Nuevo Evento');
+        $('#formEvento')[0].reset();
+        $('#modalEvento').modal('show');
+    });
+     
+    $('#btnGuardarEvento').click(function () {
+        var evento = {
+            Id: $('#Id').val(),
+            Titulo: $('#Titulo').val(),
+            Imagen: $('#Imagen').val(),
+            Descripcion: $('#Descripcion').val(),
+            Fecha: $('#Fecha').val(),
+            Hora: $('#Hora').val(),
+            PeriodoInscripcion: $('#PeriodoInscripcion').val()
+        };
+
+        $.ajax({
+            url: '/Home/CrearEvento', 
+            type: 'POST', 
+            data: evento,
+            success: function (response) {
+                if (response.success) {
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: "Evento guardado",
+                        text: response.message,
+                    });
+
+                    $('#modalEvento').modal('hide');
+
+                    // Actualizar el título y otros elementos en la vista principal
+                    $('#ProximoEventoTitulo').text(response.data.proximoEvento.titulo);
+                    $('#ProximoEventoImagen').attr('src', response.data.proximoEvento.imagen);
+                    $('#ProximoEventoDescripcion').text(response.data.proximoEvento.descripcion);
+                    $('#ProximoEventoFecha').text('Fecha: ' + response.data.proximoEvento.fecha);
+                    $('#ProximoEventoHora').text('Hora: ' + response.data.proximoEvento.hora);
+                    $('#ProximoEventoPeriodo').text('Fecha límite de inscripción: ' + response.data.proximoEvento.periodoInscripcion);
+
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message,
+                    });
+                }
+                location.reload()
+            },
+            error: function (xhr, status, error) {
+                console.log(error);
+                alert('Hubo un error al crear el evento.');
+                location.reload();
+            }
+        });
+
+        // Cierra la modal después de guardar
+        $('#modalEvento').modal('hide');
+    });
+
+
+});
+
+
+
+$(document).ready(function () {
     $(document).on('click', '.editar-btn', function () {
         var row = $(this).closest('tr');
         row.find('.bando-select, .pago-select, .lista-select').prop('disabled', false);
@@ -80,7 +148,7 @@
 
         // Envía una solicitud al método AñadirParticipante
         $.ajax({
-            url: url, // URL correcta para la operación
+            url: url,
             type: 'POST',
             data: participante,
             success: function (response) {

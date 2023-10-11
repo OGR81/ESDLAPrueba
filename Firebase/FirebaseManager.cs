@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
+
 namespace MESBG.Firebase
 {
     public class FirebaseManager
@@ -29,17 +31,102 @@ namespace MESBG.Firebase
                                     
         }
 
-        // Método para leer un documento por su ID
-        /*public async Task<DocumentSnapshot> LeerDocumento(string coleccion, string documentoId)
+        public async Task<List<Evento>> GetEventos()
         {
-            // Obtener una referencia a la colección
+            var eventosList = new List<Evento>();
+            Query allEventosQuery = _db.Collection("eventos");
+            QuerySnapshot allEventosQuerySnapshot = await allEventosQuery.GetSnapshotAsync();
+
+            foreach (DocumentSnapshot documentSnapshot in allEventosQuerySnapshot.Documents)
+            {
+                Evento evento = documentSnapshot.ConvertTo<Evento>();
+                evento.Id = documentSnapshot.Id;
+                eventosList.Add(evento);
+            }
+
+            return eventosList;
+        }
+
+        public async Task<Evento> GetProximoEventoAsync()
+        {
+            var eventosList = await GetEventos();
+            if (eventosList.Count > 0)
+            {
+                // Ordena la lista de eventos por fecha en orden descendente (el evento más reciente primero)
+                eventosList = eventosList.OrderByDescending(e => e.Fecha).ToList();
+                return eventosList.First();
+            }
+            return null;
+        }
+
+        public async Task<List<Evento>> GetEventosPasados()
+        {
+            var eventosList = await GetEventos();
+            if (eventosList.Count > 0)
+            {
+                // Ordena la lista de eventos por fecha en orden ascendente (eventos más antiguos primero)
+                eventosList = eventosList.OrderBy(e => e.Fecha).ToList();
+                return eventosList;
+            }
+            return new List<Evento>();
+        }
+
+
+        public async Task CrearDocEvento(string coleccion, Evento evento)
+        {            
             CollectionReference collectionRef = _db.Collection(coleccion);
 
-            // Obtener el documento por su ID
-            DocumentSnapshot document = await collectionRef.Document(documentoId).GetSnapshotAsync();
+            try
+            {
+                // Convierte la imagen a base64 y luego guárdala como una cadena
+                string imagenBase64 = ConvertImageToBase64(evento.Imagen);
 
-            return document;
-        }*/
+                var eventoSerialized = new
+                {
+                    Titulo = evento.Titulo,
+                    Descripcion = evento.Descripcion,
+                    Imagen = imagenBase64, // Almacena la imagen como base64
+                    Fecha = evento.Fecha.ToString("yyyy-MM-dd"),
+                    Hora = evento.Hora.ToString("HH:mm:ss"),
+                    PeriodoInscripcion = evento.PeriodoInscripcion.ToString("yyyy-MM-dd"),
+                };
+
+                await collectionRef.AddAsync(eventoSerialized);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al añadir el evento a Firebase: " + ex.Message);
+                throw;
+            }
+        }
+
+        private string ConvertImageToBase64(string imagePath)
+        {
+            try
+            {
+                if (File.Exists(imagePath))
+                {
+                    byte[] imageBytes = File.ReadAllBytes(imagePath);
+                    return Convert.ToBase64String(imageBytes);
+                }
+                return null; // Devuelve null si la ruta de la imagen no existe o si ocurre algún error.
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al convertir la imagen a base64: " + ex.Message);
+                throw;
+            }
+        }
+
+
+        public async Task ActualizarDocEvento(string coleccion, string documentoId, Dictionary<string, object> updates)
+        {
+            // Obtener una referencia al documento que deseas actualizar
+            DocumentReference documentRef = _db.Collection(coleccion).Document(documentoId);
+
+            // Realizar la actualización
+            await documentRef.UpdateAsync(updates);
+        }
 
         public async Task <List<Participante>> GetParticipantes()
         {

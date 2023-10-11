@@ -2,54 +2,95 @@
 @using MESBG.Models
 
 @{
-    ViewData["Title"] = "Bienvenido al torneo del señor de los anillos";
+    ViewData["Title"] = "Bienvenido al torneo de MESBG ";
 }
 
-<h1 class="text-center">@ViewData["Title"]</h1>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-4.7.0" crossorigin="anonymous" />
+<link rel="stylesheet" href="~/css/custom.css" />
 
-@if (!string.IsNullOrEmpty(ViewData["Mensaje"] as string))
-{
-    <div class="alert alert-success text-center">@ViewData["Mensaje"]</div>
-}
 
-<div class="text-center">
-    <form asp-controller="Home" asp-action="Index" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="cargaImagen">Subir imagen:</label>
-            <input type="file" class="form-control-file" id="cargaImagen" name="cargaImagen">
-        </div>
-        <div class="form-group">
-            <label for="evento">Detalle del evento:</label>
-            <input type="text" class="form-control" id="evento" name="evento">
-        </div>
-        <button type="submit" class="btn btn-primary">Subir</button>
-    </form>
-</div>
-
-@if (!string.IsNullOrEmpty(Model.Imagen))
-{
-    <h3 class="text-center">Imagen subida:</h3>
-    <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
-            <img src="~/images/@Model.Imagen" class="img-thumbnail" alt="Imagen subida">
-        </div>
-        <div class="col-md-6">
-            <h4>Detalle del evento:</h4>
-            <p>@Model.DetalleEvento</p>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-6 text-right pr-4">
+            <!-- Añade pr-4 para un margen derecho adicional -->
+            <a href="#" class="iniciar-sesion-link">Iniciar sesión</a>
+            <a href="#" class="nuevo-evento-link" data-toggle="modal" data-target="#modalEvento">Nuevo evento</a>
+            <a href="#" class="modificar-evento-link">Modificar evento</a>
         </div>
     </div>
-}
+</div>
+
+
+<div class="text-center">
+    <h1 class="text-center mt-3">@ViewData["Title"]</h1>
+</div>
+
+
+<h1 id="ProximoEventoTitulo" class="text-center">@Model.ProximoEvento?.Titulo</h1>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <img id="ProximoEventoImagen" src="" alt="Imagen del evento" class="img-thumbnail" />
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <p>Descripción: <span id="ProximoEventoDescripcion">@Model.ProximoEvento?.Descripcion</span></p>
+    <p>Fecha: <span id="ProximoEventoFecha">@Model.ProximoEvento?.Fecha.ToString("dd/MM/yyyy")</span></p>
+    <p>Hora: <span id="ProximoEventoHora">@Model.ProximoEvento?.Hora.ToString("HH:mm")</span></p>
+    <p>Fecha límite de inscripción: <span id="ProximoEventoPeriodo">@Model.ProximoEvento?.PeriodoInscripcion.ToString("dd/MM/yyyy")</span></p>
+</div>
+
+<!-- Modal para Crear Evento -->
+<div class="modal fade" id="modalEvento" tabindex="-1" role="dialog" aria-labelledby="modalEventoTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEventoTitle">Nuevo Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para crear el evento -->
+                <form id="formEvento">
+                    <div hidden>                        
+                        <input type="text" class="form-control" id="Id" name="Id" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="Titulo">Título</label>
+                        <input type="text" class="form-control" id="Titulo" name="Titulo" placeholder="Título del evento" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Imagen">Imagen</label>
+                        <input type="file" class="form-control-file" id="Imagen" name="Imagen">
+                    </div>
+                    <div class="form-group">
+                        <label for="Descripcion">Descripción</label>
+                        <input type="text" class="form-control" id="Descripcion" name="Descripcion" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Fecha">Fecha</label>
+                        <input type="date" class="form-control" id="Fecha" name="Fecha" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Hora">Hora</label>
+                        <input type="time" class="form-control" id="Hora" name="Hora" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="PeriodoInscripcion">Fecha límite de inscripción</label>
+                        <input type="date" class="form-control" id="PeriodoInscripcion" name="PeriodoInscripcion" placeholder="Fecha de Inicio - Fecha de Fin" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarEvento">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
 
-
-
-
-
-
-
-
-
-
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="~/js/custom.js"></script>

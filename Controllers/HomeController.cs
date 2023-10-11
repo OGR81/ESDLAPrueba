@@ -3,6 +3,12 @@ using MESBG.Models;
 using MESBG.Firebase;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using Microsoft.AspNetCore.Hosting;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 
 namespace MESBG.Controllers
@@ -23,28 +29,67 @@ namespace MESBG.Controllers
         }
 
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var modelo = new HomeViewModel();
-            return View(modelo);
+           var modelo = new HomeViewModel();
+
+           // Obtener el próximo evento (último evento)
+           modelo.ProximoEvento = await _firebaseManager.GetProximoEventoAsync();                 
+           
+
+           return View("Index", modelo);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> CrearEvento(Evento evento)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Error al introducir el evento");
+            }
+
+            await _firebaseManager.CrearDocEvento("eventos", evento);
+                        
+            // Si hay errores de validación, vuelve a mostrar la vista actual
+            return Json(new { success = true, message = "Evento creado" });
         }
 
         [HttpPost]
-        public IActionResult Index(IFormFile cargaImagen)
+        public async Task<IActionResult> EditarEvento(Evento evento)
         {
-            // Código del método Index actual
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Error al editar el evento");
+            }
 
-            return View();
-        }
-        
-        
+            // Crea un diccionario con los campos a actualizar
+            var actualizacion = new Dictionary<string, object>
+            {
+                { "Titulo", evento.Titulo },
+                { "Descripcion", evento.Descripcion },
+                { "Fecha", evento.Fecha },
+                { "Hora", evento.Hora },
+                { "PeriodoInscripcion", evento.PeriodoInscripcion },
+                { "Imagen", evento.Imagen },
+                
+            };
+                                
+            await _firebaseManager.ActualizarDocEvento("eventos", evento.Id, actualizacion);
+
+            var modelo = new HomeViewModel
+            {
+                ProximoEvento = await _firebaseManager.GetProximoEventoAsync(),
+                EventosPasados = await _firebaseManager.GetEventosPasados()
+            };
+            
+            return Json(new { success = true, message = "Evento modificado" });
+        }                
+
         public async Task<IActionResult> Participantes()
         {
             var modelo = new ParticipantesViewModel();
-            modelo.Participantes = await ObtenerListaParticipantes(); 
-            //List<Participante> lista = await ObtenerListaParticipantes();
-
-            
+            modelo.Participantes = await ObtenerListaParticipantes();                       
 
             return View("ParticipantesView", modelo);
         }
