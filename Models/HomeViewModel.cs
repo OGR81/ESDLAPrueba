@@ -6,8 +6,8 @@ namespace MESBG.Models
 {
     public class HomeViewModel
     {
-        public Evento ProximoEvento { get; set; }
-        public List<Evento> EventosPasados { get; set; } 
+        public Evento UltimoEvento { get; set; }
+         
     }
 
     [FirestoreData] 
@@ -19,13 +19,16 @@ namespace MESBG.Models
         [FirestoreProperty]
         public string Descripcion { get; set; }
         [FirestoreProperty]
-        public DateTime Fecha { get; set; }
+        public Timestamp FechaRegistro { get; set; }        
         [FirestoreProperty]
-        public DateTime Hora { get; set; }
+        public string PeriodoInscripcion { get; set; }
         [FirestoreProperty]
-        public DateTime PeriodoInscripcion { get; set; }
+        public string Imagen { get; set; }
         [FirestoreProperty]
-        public string Imagen { get; set; } 
+        public string Hora { get; set; }
+        [FirestoreProperty]
+        public string Fecha { get; set; }
+
     }
 }
 

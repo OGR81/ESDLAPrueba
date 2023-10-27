@@ -6,7 +6,7 @@
         $('#formEvento')[0].reset();
         $('#modalEvento').modal('show');
     });
-     
+
     $('#btnGuardarEvento').click(function () {
         var evento = {
             Id: $('#Id').val(),
@@ -19,8 +19,8 @@
         };
 
         $.ajax({
-            url: '/Home/CrearEvento', 
-            type: 'POST', 
+            url: '/Home/CrearEvento',
+            type: 'POST',
             data: evento,
             success: function (response) {
                 if (response.success) {
@@ -34,12 +34,13 @@
                     $('#modalEvento').modal('hide');
 
                     // Actualizar el título y otros elementos en la vista principal
-                    $('#ProximoEventoTitulo').text(response.data.proximoEvento.titulo);
-                    $('#ProximoEventoImagen').attr('src', response.data.proximoEvento.imagen);
-                    $('#ProximoEventoDescripcion').text(response.data.proximoEvento.descripcion);
-                    $('#ProximoEventoFecha').text('Fecha: ' + response.data.proximoEvento.fecha);
-                    $('#ProximoEventoHora').text('Hora: ' + response.data.proximoEvento.hora);
-                    $('#ProximoEventoPeriodo').text('Fecha límite de inscripción: ' + response.data.proximoEvento.periodoInscripcion);
+                    $('#UltimoEventoId').text(response.data.ultimoEvento.Id);
+                    $('#UltimoEventoTitulo').text(response.data.ultimoEvento.Titulo);
+                    $('#UltimoEventoImagen').attr('src', response.data.ultimoEvento.Imagen);
+                    $('#UltimoEventoDescripcion').text(response.data.ultimoEvento.Descripcion);
+                    $('#UltimoEventoFecha').text('Fecha: ' + response.data.ultimoEvento.Fecha);
+                    $('#UltimoEventoHora').text('Hora: ' + response.data.ultimoEvento.Hora);
+                    $('#UltimoEventoPeriodoInscripcion').text('Fecha límite de inscripción: ' + response.data.ultimoEvento.PeriodoInscripcion);
 
                 } else {
                     Swal.fire({
@@ -48,7 +49,7 @@
                         text: response.message,
                     });
                 }
-                location.reload()
+                //location.reload()
             },
             error: function (xhr, status, error) {
                 console.log(error);
@@ -59,11 +60,10 @@
 
         // Cierra la modal después de guardar
         $('#modalEvento').modal('hide');
+        location.reload();
     });
 
-
 });
-
 
 
 $(document).ready(function () {
@@ -79,7 +79,7 @@ $(document).ready(function () {
     $(document).ready(function () {
         // Manejar el clic en el botón "Eliminar"
         $('#tablaParticipantes').on('click', '.eliminar-btn', function () {
-            var idParticipante = $(this).parents("tr").find("input[name='id']").val(); // Obtener el valor de nick
+            var idParticipante = $(this).parents("tr").find("input[name='id']").val(); 
 
             Swal.fire({
                 title: '¿Estás seguro de que quieres eliminar el jugador?',
@@ -453,7 +453,7 @@ $(document).ready(function () {
     $(document).on('click', '.nueva-puntuacion-btn', function () {
         // Obtener la lista de jugadores disponibles desde el elemento oculto
         var jugadoresDisponibles = $('#jugadores-disponibles').text().split(',');
-
+        console.log("dentro");
         var newRowHtml = `
         <tr>
             <td>

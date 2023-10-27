@@ -31,67 +31,30 @@ namespace MESBG.Firebase
                                     
         }
 
-        public async Task<List<Evento>> GetEventos()
+        public async Task<Evento> GetUltimoEventoAsync()
         {
-            var eventosList = new List<Evento>();
-            Query allEventosQuery = _db.Collection("eventos");
-            QuerySnapshot allEventosQuerySnapshot = await allEventosQuery.GetSnapshotAsync();
-
-            foreach (DocumentSnapshot documentSnapshot in allEventosQuerySnapshot.Documents)
+            Evento evento = new Evento();
+            CollectionReference eventosRef = _db.Collection("eventos");
+            Query query = eventosRef.OrderByDescending("Fecha2").Limit(3);
+            QuerySnapshot querySnapshot = await query.GetSnapshotAsync();
+            
+            foreach (DocumentSnapshot documentSnapshot in querySnapshot.Documents)
             {
-                Evento evento = documentSnapshot.ConvertTo<Evento>();
+                evento = documentSnapshot.ConvertTo<Evento>();
                 evento.Id = documentSnapshot.Id;
-                eventosList.Add(evento);
+                
             }
 
-            return eventosList;
+            return evento;
         }
-
-        public async Task<Evento> GetProximoEventoAsync()
-        {
-            var eventosList = await GetEventos();
-            if (eventosList.Count > 0)
-            {
-                // Ordena la lista de eventos por fecha en orden descendente (el evento más reciente primero)
-                eventosList = eventosList.OrderByDescending(e => e.Fecha).ToList();
-                return eventosList.First();
-            }
-            return null;
-        }
-
-        public async Task<List<Evento>> GetEventosPasados()
-        {
-            var eventosList = await GetEventos();
-            if (eventosList.Count > 0)
-            {
-                // Ordena la lista de eventos por fecha en orden ascendente (eventos más antiguos primero)
-                eventosList = eventosList.OrderBy(e => e.Fecha).ToList();
-                return eventosList;
-            }
-            return new List<Evento>();
-        }
-
-
+        
         public async Task CrearDocEvento(string coleccion, Evento evento)
-        {            
+        {
             CollectionReference collectionRef = _db.Collection(coleccion);
 
             try
             {
-                // Convierte la imagen a base64 y luego guárdala como una cadena
-                string imagenBase64 = ConvertImageToBase64(evento.Imagen);
-
-                var eventoSerialized = new
-                {
-                    Titulo = evento.Titulo,
-                    Descripcion = evento.Descripcion,
-                    Imagen = imagenBase64, // Almacena la imagen como base64
-                    Fecha = evento.Fecha.ToString("yyyy-MM-dd"),
-                    Hora = evento.Hora.ToString("HH:mm:ss"),
-                    PeriodoInscripcion = evento.PeriodoInscripcion.ToString("yyyy-MM-dd"),
-                };
-
-                await collectionRef.AddAsync(eventoSerialized);
+                await collectionRef.AddAsync(evento);
             }
             catch (Exception ex)
             {
@@ -100,31 +63,25 @@ namespace MESBG.Firebase
             }
         }
 
-        private string ConvertImageToBase64(string imagePath)
+        public async Task<Evento> GetEventoPorId(string eventoId)
         {
-            try
+            DocumentReference docRef = _db.Collection("eventos").Document(eventoId);
+            DocumentSnapshot documentSnapshot = await docRef.GetSnapshotAsync();
+
+            if (documentSnapshot.Exists)
             {
-                if (File.Exists(imagePath))
-                {
-                    byte[] imageBytes = File.ReadAllBytes(imagePath);
-                    return Convert.ToBase64String(imageBytes);
-                }
-                return null; // Devuelve null si la ruta de la imagen no existe o si ocurre algún error.
+                return documentSnapshot.ConvertTo<Evento>();
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error al convertir la imagen a base64: " + ex.Message);
-                throw;
-            }
+
+            return null;
         }
 
+        
 
         public async Task ActualizarDocEvento(string coleccion, string documentoId, Dictionary<string, object> updates)
-        {
-            // Obtener una referencia al documento que deseas actualizar
+        {            
             DocumentReference documentRef = _db.Collection(coleccion).Document(documentoId);
 
-            // Realizar la actualización
             await documentRef.UpdateAsync(updates);
         }
 

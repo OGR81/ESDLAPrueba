@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MESBG.Models;
 using MESBG.Firebase;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Collections.Generic;
@@ -29,15 +27,22 @@ namespace MESBG.Controllers
         }
 
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string eventoId = null)
         {
-           var modelo = new HomeViewModel();
+            var modelo = new HomeViewModel();
 
-           // Obtener el próximo evento (último evento)
-           modelo.ProximoEvento = await _firebaseManager.GetProximoEventoAsync();                 
-           
+            if (!string.IsNullOrEmpty(eventoId))
+            {
+                // Obtener el evento recién creado por su ID
+                modelo.UltimoEvento = await _firebaseManager.GetEventoPorId(eventoId);
+            }
+            else
+            {
+                // Obtener el último evento como antes
+                modelo.UltimoEvento = await _firebaseManager.GetUltimoEventoAsync();
+            }
 
-           return View("Index", modelo);
+            return View("Index", modelo);
         }
 
 
@@ -48,12 +53,16 @@ namespace MESBG.Controllers
             {
                 return BadRequest("Error al introducir el evento");
             }
-
+            //evento.Id = Guid.NewGuid().ToString();
             await _firebaseManager.CrearDocEvento("eventos", evento);
-                        
-            // Si hay errores de validación, vuelve a mostrar la vista actual
+
+            // Redirige a la acción "Index" con el ID del evento recién creado como parámetro
             return Json(new { success = true, message = "Evento creado" });
         }
+
+
+
+
 
         [HttpPost]
         public async Task<IActionResult> EditarEvento(Evento evento)
@@ -76,13 +85,7 @@ namespace MESBG.Controllers
             };
                                 
             await _firebaseManager.ActualizarDocEvento("eventos", evento.Id, actualizacion);
-
-            var modelo = new HomeViewModel
-            {
-                ProximoEvento = await _firebaseManager.GetProximoEventoAsync(),
-                EventosPasados = await _firebaseManager.GetEventosPasados()
-            };
-            
+                                    
             return Json(new { success = true, message = "Evento modificado" });
         }                
 
@@ -94,21 +97,22 @@ namespace MESBG.Controllers
             return View("ParticipantesView", modelo);
         }
 
+        private async Task<List<Participante>> ObtenerListaParticipantes()
+        {
+            return await _firebaseManager.GetParticipantes();
+
+        }
+
         [HttpPost]
         public async Task<IActionResult> EliminarParticipante(string idParticipante)
         {
-            Console.WriteLine($"Entra en Eliminar el participante con id:{idParticipante}" );
-            
-            // Llama a EliminarParticipanteAsync para eliminar el participante en Firebase
-            await _firebaseManager.EliminarDocParticipante("participantes", idParticipante);
-
-            // Obtener la lista actualizada de participantes desde Firebase
+            Console.WriteLine($"Entra en Eliminar el participante con id:{idParticipante}" );           
+        
+            await _firebaseManager.EliminarDocParticipante("participantes", idParticipante);                       
             
             var modelo = new ParticipantesViewModel();
             modelo.Participantes = await ObtenerListaParticipantes(); ;
 
-
-            // Devuelve la vista con la lista actualizada
             return Json(new { success = true });
         }
 
@@ -142,7 +146,7 @@ namespace MESBG.Controllers
                 return Json(new { success = false, message = "El nick ya está en uso" });
             }
 
-            // Crea un diccionario con los campos a actualizar
+            
             var actualizacion = new Dictionary<string, object>
             {
                 { "Nombre", participante?.Nombre },
@@ -152,19 +156,12 @@ namespace MESBG.Controllers
                 { "ListaEnviada", participante.ListaEnviada },
 
             };
-
             
-            // Llama a FirebaseManager para actualizar el participante en Firebase
+            
             await _firebaseManager.ActualizarDocParticipante("participantes", participante.Id, actualizacion);
 
             return Json(new { success = true, message = "Jugador modificado" });
-        }
-
-        private async Task <List<Participante>> ObtenerListaParticipantes()
-        { 
-            return await _firebaseManager.GetParticipantes();
-         
-        }
+        }              
 
         private async Task<bool> VerificarNick(string nick, string idDocumento)
         {
@@ -199,17 +196,12 @@ namespace MESBG.Controllers
         public async Task<IActionResult> EliminarPuntuacion(string idPuntuacion)
         {
             Console.WriteLine($"Entra en Eliminar el participante con id:{idPuntuacion}");
-
-            // Llama a EliminarParticipanteAsync para eliminar el participante en Firebase
+                        
             await _firebaseManager.EliminarDocPuntuacion("puntuaciones", idPuntuacion);
-
-            // Obtener la lista actualizada de participantes desde Firebase
 
             var modelo = new PuntuacionesViewModel();
             modelo.Puntuaciones = await ObtenerListaPuntuaciones(); ;
 
-
-            // Devuelve la vista con la lista actualizada
             return Json(new { success = true });
         }
 

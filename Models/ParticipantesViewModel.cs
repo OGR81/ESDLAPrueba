@@ -5,7 +5,7 @@ namespace MESBG.Models
 {
     public class ParticipantesViewModel
     {
-        public List<Participante> Participantes { get; set; }
+        public List<Participante>? Participantes { get; set; }
     }
 
     [FirestoreData]
@@ -25,9 +25,6 @@ namespace MESBG.Models
         [FirestoreProperty]
         public string? PagoAbonado { get; set; } 
     }
-
-
-
 }
 
 
