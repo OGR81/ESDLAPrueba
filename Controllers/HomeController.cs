@@ -40,7 +40,6 @@ namespace MESBG.Controllers
             return View("Index", modelo);
         }
 
-
         [HttpPost]
         public async Task<IActionResult> CrearEvento(Evento evento)
         {
@@ -50,7 +49,7 @@ namespace MESBG.Controllers
             }
 
             DateTime fechaEvento = ConvertDateStringToDateTime(evento.FechaEvento, evento.HoraEvento);
-            DateTime fechaPreinscripcion = ConvertDateStringToDateTime(evento.FechaEvento, "23:59");
+            DateTime fechaPreinscripcion = ConvertDateStringToDateTime(evento.PeriodoInscripcion, "23:59");
 
             if (fechaPreinscripcion > fechaEvento)
             {
@@ -75,7 +74,7 @@ namespace MESBG.Controllers
             }
 
             DateTime fechaEvento = ConvertDateStringToDateTime(evento.FechaEvento, evento.HoraEvento);
-            DateTime fechaPreinscripcion = ConvertDateStringToDateTime(evento.FechaEvento, "23:59");
+            DateTime fechaPreinscripcion = ConvertDateStringToDateTime(evento.PeriodoInscripcion, "23:59");
 
             if(fechaPreinscripcion > fechaEvento)
             {
@@ -96,6 +95,17 @@ namespace MESBG.Controllers
             await _firebaseManager.ActualizarDocEvento("eventos", evento.Id, actualizacion);
                                     
             return Json(new { success = true, message = "Evento modificado" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetImages()
+        {
+            var imagesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images\\ImagenesEventos");
+            var files = await Task.Run(()=> Directory.GetFiles(imagesDirectory));
+
+            var images = files.Select(Path.GetFileName).ToList();
+
+            return Ok(images);
         }
 
         [HttpGet]
