@@ -1,25 +1,101 @@
 ﻿$(document).ready(function () {
+    var nuevoEvento = undefined;
+
     // Abre la modal para crear o editar evento al hacer clic en el enlace "Nuevo evento"
-    $('.nuevo-evento-link').click(function () {
+    $('.nuevo-evento-link').on('click', (function (e) {
+
         // Restablece la modal para que sea una nueva creación de evento
         $('#modalEventoTitle').text('Nuevo Evento');
         $('#formEvento')[0].reset();
+        document.getElementById("modalEventoTitle").innerHTML = "Nuevo evento";
         $('#modalEvento').modal('show');
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const images = document.querySelector('img.img-fluid.selectable-image');
+
+            images.forEach(img => {
+                img.addEventListener('click', function () {
+                    alert("hola");
+                    // Primero, quitamos el borde de todas las imágenes
+                    images.forEach(innerImg => {
+                        innerImg.style.border = "none";
+                    });
+
+                    // Ahora, marcamos la imagen seleccionada
+                    img.style.border = "4px solid red";
+                });
+            });
+        });
+
+        nuevoEvento = true;
+    }));
+
+    $(".selectable-image").click(function () {
+        $(".selectable-image").removeClass("selected");  // Quitamos la clase 'selected' de todas las imágenes
+        $(this).addClass("selected");  // Añadimos la clase 'selected' a la imagen clicada
     });
 
+    document.addEventListener('DOMContentLoaded', function () {
+        const images = document.querySelector('div.image-container.selectable-image');
+
+        images.forEach(img => {
+            img.addEventListener('click', function () {
+                // Primero, quitamos el borde de todas las imágenes
+                images.forEach(innerImg => {
+                    innerImg.style.border = "none";
+                });
+
+                // Ahora, marcamos la imagen seleccionada
+                img.style.border = "4px solid red";
+            });
+        });
+    });
+
+    $('.modificar-evento-link').on('click', (function (e) {
+
+        var idDocumento = $("#UltimoEvento_Id").val();
+        nuevoEvento = false;
+        $.ajax({
+            url: "/Home/ObtenerEvento",
+            data: { idDocumento: idDocumento },
+            type: 'get',
+            cache: false
+        }).done((result) => {
+            var fechaEvento = result.evento.fechaEvento.split("/").reverse().join("-");
+            var periodoInscripcion = result.evento.periodoInscripcion.split("/").reverse().join("-");
+            document.getElementById("modalEventoTitle").innerHTML = "Modificar evento";
+            
+            $(".modal-body #Titulo").val(result.evento.titulo);
+            $(".modal-body #Descripcion").val(result.evento.descripcion);        
+            $(".modal-body #FechaEvento").val(fechaEvento);
+            $(".modal-body #HoraEvento").val(result.evento.horaEvento);           
+            $(".modal-body #PeriodoInscripcion").val(periodoInscripcion);
+
+            const imgElement = document.querySelector(`div.image-container img[src*="images/ImagenesEventos/${result.evento.imagen}"]`)
+
+            if (imgElement)
+                imgElement.style.border = "4px solid red";
+
+            $('#modalEvento').modal('show');
+        });
+    }));
+
     $('#btnGuardarEvento').click(function () {
+        var urlAction = nuevoEvento == true ? "CrearEvento" : "EditarEvento";
+        var tipoEvento = nuevoEvento == true ? "crear" : "editar";
+
         var evento = {
-            Id: $('#Id').val(),
+            Id: nuevoEvento == true ? "" : $("#UltimoEvento_Id").val(),
             Titulo: $('#Titulo').val(),
-            Imagen: $('#Imagen').val(),
+            Imagen: $('#Imagen').val().split('\\').pop(),
             Descripcion: $('#Descripcion').val(),
-            Fecha: $('#Fecha').val(),
-            Hora: $('#Hora').val(),
+            FechaEvento: $('#FechaEvento').val(),
+            HoraEvento: $('#HoraEvento').val(),
             PeriodoInscripcion: $('#PeriodoInscripcion').val()
         };
 
         $.ajax({
-            url: '/Home/CrearEvento',
+            url: '/Home/' + urlAction,
             type: 'POST',
             data: evento,
             success: function (response) {
@@ -29,56 +105,46 @@
                         icon: 'success',
                         title: "Evento guardado",
                         text: response.message,
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(function () {
+                        // Cierra la modal después de guardar
+                        $('#modalEvento').modal('hide');
+                        location.reload();
                     });
-
-                    $('#modalEvento').modal('hide');
-
-                    // Actualizar el título y otros elementos en la vista principal
-                    $('#UltimoEventoId').text(response.data.ultimoEvento.Id);
-                    $('#UltimoEventoTitulo').text(response.data.ultimoEvento.Titulo);
-                    $('#UltimoEventoImagen').attr('src', response.data.ultimoEvento.Imagen);
-                    $('#UltimoEventoDescripcion').text(response.data.ultimoEvento.Descripcion);
-                    $('#UltimoEventoFecha').text('Fecha: ' + response.data.ultimoEvento.Fecha);
-                    $('#UltimoEventoHora').text('Hora: ' + response.data.ultimoEvento.Hora);
-                    $('#UltimoEventoPeriodoInscripcion').text('Fecha límite de inscripción: ' + response.data.ultimoEvento.PeriodoInscripcion);
-
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: response.message,
+                        html: response.message
                     });
                 }
-                //location.reload()
+                
             },
             error: function (xhr, status, error) {
                 console.log(error);
-                alert('Hubo un error al crear el evento.');
+                alert('Hubo un error al ' + tipoEvento + ' el evento.');
                 location.reload();
             }
         });
-
-        // Cierra la modal después de guardar
-        $('#modalEvento').modal('hide');
-        location.reload();
     });
 
 });
 
 
 $(document).ready(function () {
-    $(document).on('click', '.editar-btn', function () {
+    $(document).on('click', '.editar-participante-btn', function () {
         var row = $(this).closest('tr');
         row.find('.bando-select, .pago-select, .lista-select').prop('disabled', false);
         row.find('.nombre-input, .nick-input').prop('readonly', false);
         row.addClass('editando');
-        row.find('.editar-btn').show();
-        row.find('.guardar-btn').hide();
+        row.find('.editar-participante-btn').hide();
+        row.find('.guardar-participante-btn').show();
     });
 
     $(document).ready(function () {
         // Manejar el clic en el botón "Eliminar"
-        $('#tablaParticipantes').on('click', '.eliminar-btn', function () {
+        $('#tablaParticipantes').on('click', '.eliminar-participante-btn', function () {
             var idParticipante = $(this).parents("tr").find("input[name='id']").val(); 
 
             Swal.fire({
@@ -88,7 +154,7 @@ $(document).ready(function () {
                 confirmButtonText: 'Sí',
                 cancelButtonText: 'Cancelar',
             }).then((result) => {
-                if (result.isConfirmed) {
+                if (result.isConfirmed && idParticipante != undefined) {
                     $.ajax({
                         url: '/Home/EliminarParticipante',
                         type: 'POST',
@@ -97,17 +163,18 @@ $(document).ready(function () {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Jugador eliminado',
-
+                                showConfirmButton: false,
+                                timer: 2000
+                            }).then(function () {
+                                location.reload();
                             });
-                            location.reload();
+
                         },
                         error: function () {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Hubo un error al eliminar el participante',
-
+                                title: 'Hubo un error al eliminar el participante'
                             });
-                            location.reload();
                         }
                     });
                 } else {
@@ -120,7 +187,7 @@ $(document).ready(function () {
 
 
     // Cuando se hace clic en "Guardar" en una fila de edición
-    $(document).on('click', '.guardar-btn', function () {
+    $(document).on('click', '.guardar-participante-btn', function () {
         var row = $(this).closest('tr');
         // Obtén los valores de los campos editables en esta fila
         var id = row.find('.id-input').val();
@@ -130,8 +197,8 @@ $(document).ready(function () {
         var pago = row.find('.pago-select').val();
         var lista = row.find('.lista-select').val();
         row.removeClass('editando');
-        row.find('.editar-btn').show();
-        row.find('.guardar-btn').hide();
+        row.find('.editar-participante-btn').show();
+        row.find('.guardar-participante-btn').hide();
 
         var url = id == undefined ? "/Home/CrearParticipante" : "/Home/EditarParticipante";
 
@@ -158,16 +225,19 @@ $(document).ready(function () {
                         icon: 'success',
                         title: "Guardado",
                         text: response.message,
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(function () {
+                        location.reload();
                     });
                     
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: response.message,
+                        text: response.message
                     });
                 }
-                location.reload()
             },
             error: function (xhr, status, error) {
                 console.log(error);
@@ -285,9 +355,9 @@ $(document).ready(function () {
                     </select>
                 </td>
                 <td>
-                    <button class="btn btn-link editar-btn" title="Editar"><i class="far fa-edit"></i></button>
-                    <button class="btn btn-link eliminar-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
-                    <button class="btn btn-link guardar-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
+                    <button class="btn btn-link editar-participante-btn" title="Editar"><i class="far fa-edit"></i></button>
+                    <button class="btn btn-link guardar-participante-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
+                    <button class="btn btn-link eliminar-participante-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
                 </td>
             </tr>
         `;
@@ -299,8 +369,8 @@ $(document).ready(function () {
         $('table tbody tr:last-child').find('.bando-select, .pago-select, .lista-select').prop('disabled', false);
         $('table tbody tr:last-child').find('.nombre-input, .nick-input').prop('readonly', false);
         $('table tbody tr:last-child').addClass('editando');
-        $('table tbody tr:last-child').find('.editar-btn').hide();
-        $('table tbody tr:last-child').find('.guardar-btn').show();
+        $('table tbody tr:last-child').find('.editar-participante-btn').hide();
+        $('table tbody tr:last-child').find('.guardar-participante-btn').show();
     });
 });
 
@@ -340,16 +410,16 @@ $(document).ready(function () {
         filtrarPorRonda($(this).val()); // Filtrar al cambiar la selección del filtro
     });    
 
-    $(document).on('click', '.editar-btn', function () {
+    $(document).on('click', '.editar-puntuacion-btn', function () {
         var row = $(this).closest('tr');
         row.find('.select-nick, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', false);
         row.addClass('editando');
-        row.find('.editar-btn').hide();
-        row.find('.guardar-btn').show();
+        row.find('.editar-puntuacion-btn').hide();
+        row.find('.guardar-puntuacion-btn').show();
     });
 
     $(document).ready(function () {        
-        $('#tablaPuntuaciones').on('click', '.eliminar-btn', function () {
+        $('#tablaPuntuaciones').on('click', '.eliminar-puntuacion-btn', function () {
             var idPuntuacion = $(this).parents("tr").find("input[name='id']").val(); 
 
             Swal.fire({
@@ -359,7 +429,7 @@ $(document).ready(function () {
                 confirmButtonText: 'Sí',
                 cancelButtonText: 'Cancelar',
             }).then((result) => {
-                if (result.isConfirmed) {
+                if (result.isConfirmed && idPuntuacion != undefined) {
                     $.ajax({
                         url: '/Home/EliminarPuntuacion',
                         type: 'POST',
@@ -368,17 +438,18 @@ $(document).ready(function () {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Puntuación eliminada',
+                                showConfirmButton: false,
+                                timer: 2000
 
+                            }).then(function() {
+                                location.reload();
                             });
-                            location.reload();
                         },
                         error: function () {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Hubo un error al eliminar la puntuación',
-
-                            });
-                            location.reload();
+                                title: 'Hubo un error al eliminar la puntuación'
+                            })
                         }
                     });
                 } else {
@@ -389,7 +460,7 @@ $(document).ready(function () {
 
     });
 
-    $(document).on('click', '.guardar-btn', function () {
+    $(document).on('click', '.guardar-puntuacion-btn', function () {
         var row = $(this).closest('tr');                
         var id = row.find('.id-input').val();
         var nick = row.find('.select-nick').val();
@@ -400,8 +471,8 @@ $(document).ready(function () {
         var liderAbatido = row.find('.select-lider-abatido').val();
         var ronda = row.find('.select-ronda').val();
         row.removeClass('editando');
-        row.find('.editar-btn').show();
-        row.find('.guardar-btn').hide();
+        row.find('.editar-puntuacion-btn').show();
+        row.find('.guardar-puntuacion-btn').hide();
 
         var url = id == undefined ? "/Home/CrearPuntuacion" : "/Home/EditarPuntuacion";
 
@@ -430,16 +501,19 @@ $(document).ready(function () {
                         icon: 'success',
                         title: "Puntuación guardada",
                         text: response.message,
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(function () {
+                        location.reload();
                     });
 
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: response.message,
+                        text: response.message
                     });
                 }
-                location.reload()
             },
             error: function (xhr, status, error) {
                 console.log(error);
@@ -453,7 +527,6 @@ $(document).ready(function () {
     $(document).on('click', '.nueva-puntuacion-btn', function () {
         // Obtener la lista de jugadores disponibles desde el elemento oculto
         var jugadoresDisponibles = $('#jugadores-disponibles').text().split(',');
-        console.log("dentro");
         var newRowHtml = `
         <tr>
             <td>
@@ -500,9 +573,10 @@ $(document).ready(function () {
                 </select>
             </td>
             <td>
-                <button class="btn btn-link editar-btn" title="Editar"><i class="far fa-edit"></i></button>
-                <button class="btn btn-link eliminar-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
-                <button class="btn btn-link guardar-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
+                <button class="btn btn-link editar-puntuacion-btn" title="Editar"><i class="far fa-edit"></i></button>
+                <button class="btn btn-link guardar-puntuacion-btn" title="Guardar" style="display: none;"><i class="far fa-save"></i></button>
+                <button class="btn btn-link eliminar-puntuacion-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
+                
             </td>
         </tr>
     `;
@@ -514,8 +588,8 @@ $(document).ready(function () {
         var newRow = $('table tbody tr:last-child');
         newRow.find('.select-nick, .select-punto-partida, .select-puntos-victoria-obtenidos, .select-puntos-victoria-cedidos, .select-lider-abatido, .select-ronda').prop('disabled', false);
         newRow.addClass('editando');
-        newRow.find('.editar-btn').hide();
-        newRow.find('.guardar-btn').show();
+        newRow.find('.editar-puntuacion-btn').hide();
+        newRow.find('.guardar-puntuacion-btn').show();
         
         actualizarOpcionesFiltroRonda();
     });    
@@ -553,7 +627,12 @@ $(document).ready(function () {
             $('table tbody tr').show();
         }
     }
+
     
+
+    function selectImage() {
+         
+    }
 });
 
 

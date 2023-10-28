@@ -139,6 +139,36 @@ button[type="submit"]:hover {
 }
 
 
+.selectable-image {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.selectable-image:hover {
+    transform: scale(1.1);
+}
+
+.image-wrapper {
+    overflow-x: auto;
+}
+
+.image-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.image-container img {
+    
+    width:80px;
+    height:80px;
+    margin: 0 2px;
+}
+
+
+
+
+
 
 
 

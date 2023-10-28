@@ -33,16 +33,14 @@ namespace MESBG.Firebase
 
         public async Task<Evento> GetUltimoEventoAsync()
         {
-            Evento evento = new Evento();
+            Evento evento = new();
             CollectionReference eventosRef = _db.Collection("eventos");
-            Query query = eventosRef.OrderByDescending("Fecha2").Limit(3);
+            Query query = eventosRef.OrderByDescending("TimeStampFechaEvento").Limit(1);
             QuerySnapshot querySnapshot = await query.GetSnapshotAsync();
             
             foreach (DocumentSnapshot documentSnapshot in querySnapshot.Documents)
             {
-                evento = documentSnapshot.ConvertTo<Evento>();
-                evento.Id = documentSnapshot.Id;
-                
+                evento = MapDocumentSnaptshotToModel(documentSnapshot);
             }
 
             return evento;
@@ -63,17 +61,18 @@ namespace MESBG.Firebase
             }
         }
 
-        public async Task<Evento> GetEventoPorId(string eventoId)
+        public async Task<Evento?> GetEventoPorId(string eventoId)
         {
             DocumentReference docRef = _db.Collection("eventos").Document(eventoId);
             DocumentSnapshot documentSnapshot = await docRef.GetSnapshotAsync();
-
+            Evento? evento = null;
+            
             if (documentSnapshot.Exists)
             {
-                return documentSnapshot.ConvertTo<Evento>();
+                evento = MapDocumentSnaptshotToModel(documentSnapshot);
             }
 
-            return null;
+            return evento;
         }
 
         
@@ -132,6 +131,7 @@ namespace MESBG.Firebase
             return participantesList;
 
         }
+
         // Método para eliminar un documento de una colección
         public async Task EliminarDocParticipante(string coleccion, string idParticipante)
         {
@@ -301,6 +301,30 @@ namespace MESBG.Firebase
             return clasificacionList;
 
         }
+
+        #region private
+        private Evento MapDocumentSnaptshotToModel(DocumentSnapshot documentSnapshot)
+        {
+            Timestamp fechaTimeStamp = documentSnapshot.GetValue<Timestamp>("TimeStampFechaEvento");
+            DateTimeOffset dtOffsetEvento = fechaTimeStamp.ToDateTimeOffset();
+            DateTime fechaEvento = dtOffsetEvento.LocalDateTime;
+
+            Timestamp preinscripcionTimeStamp = documentSnapshot.GetValue<Timestamp>("TimeStampPeriodoInscripcion");
+            DateTimeOffset dtoOffsetPreinscripcion = preinscripcionTimeStamp.ToDateTimeOffset();
+            DateTime fechaPreinscripcion = dtoOffsetPreinscripcion.LocalDateTime;
+
+            return new Evento()
+            {
+                Id = documentSnapshot.Id,
+                Titulo = documentSnapshot.GetValue<string>("Titulo"),
+                Descripcion = documentSnapshot.GetValue<string>("Descripcion"),
+                FechaEvento = fechaEvento.Date.ToShortDateString(),
+                HoraEvento = fechaEvento.TimeOfDay.ToString().Substring(0, 5),
+                PeriodoInscripcion = fechaPreinscripcion.Date.ToShortDateString(),
+                Imagen = documentSnapshot.GetValue<string>("Imagen")
+            };
+        }
+        #endregion
 
     }
 }

@@ -19,15 +19,16 @@ namespace MESBG.Models
         [FirestoreProperty]
         public string Descripcion { get; set; }
         [FirestoreProperty]
-        public Timestamp FechaRegistro { get; set; }        
+        public Timestamp TimeStampFechaEvento { get; set; }        
         [FirestoreProperty]
-        public string PeriodoInscripcion { get; set; }
+        public Timestamp TimeStampPeriodoInscripcion { get; set; }
         [FirestoreProperty]
         public string Imagen { get; set; }
-        [FirestoreProperty]
-        public string Hora { get; set; }
-        [FirestoreProperty]
-        public string Fecha { get; set; }
+   
+        public string HoraEvento { get; set; }
+
+        public string FechaEvento { get; set; }
+        public string PeriodoInscripcion { get; set; }
 
     }
 }

@@ -7,7 +7,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Google.Cloud.Firestore;
+using System.Globalization;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace MESBG.Controllers
 {
@@ -27,20 +30,12 @@ namespace MESBG.Controllers
         }
 
 
-        public async Task<IActionResult> Index(string eventoId = null)
+        public async Task<IActionResult> Index()
         {
-            var modelo = new HomeViewModel();
+            HomeViewModel modelo = new();
 
-            if (!string.IsNullOrEmpty(eventoId))
-            {
-                // Obtener el evento recién creado por su ID
-                modelo.UltimoEvento = await _firebaseManager.GetEventoPorId(eventoId);
-            }
-            else
-            {
-                // Obtener el último evento como antes
-                modelo.UltimoEvento = await _firebaseManager.GetUltimoEventoAsync();
-            }
+            // Obtener el último evento como antes
+            modelo.UltimoEvento = await _firebaseManager.GetUltimoEventoAsync();
 
             return View("Index", modelo);
         }
@@ -51,25 +46,40 @@ namespace MESBG.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest("Error al introducir el evento");
+                return Json(new { success = false, message = "Todos los campos son obligatorios.<br>Debe seleccionar una imagen." });
             }
-            //evento.Id = Guid.NewGuid().ToString();
+
+            DateTime fechaEvento = ConvertDateStringToDateTime(evento.FechaEvento, evento.HoraEvento);
+            DateTime fechaPreinscripcion = ConvertDateStringToDateTime(evento.FechaEvento, "23:59");
+
+            if (fechaPreinscripcion > fechaEvento)
+            {
+                return Json(new { success = false, message = "La fecha de preinscripción debe ser menor a la del evento." });
+            }
+
+            evento.TimeStampFechaEvento = ConvertDateToTimestamp(fechaEvento.ToUniversalTime());
+            evento.TimeStampPeriodoInscripcion = ConvertDateToTimestamp(fechaPreinscripcion.ToUniversalTime());
+
             await _firebaseManager.CrearDocEvento("eventos", evento);
 
             // Redirige a la acción "Index" con el ID del evento recién creado como parámetro
             return Json(new { success = true, message = "Evento creado" });
         }
 
-
-
-
-
         [HttpPost]
         public async Task<IActionResult> EditarEvento(Evento evento)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest("Error al editar el evento");
+                return Json(new { success = false, message = "Todos los campos son obligatorios.<br>Debe seleccionar una imagen."});
+            }
+
+            DateTime fechaEvento = ConvertDateStringToDateTime(evento.FechaEvento, evento.HoraEvento);
+            DateTime fechaPreinscripcion = ConvertDateStringToDateTime(evento.FechaEvento, "23:59");
+
+            if(fechaPreinscripcion > fechaEvento)
+            {
+                return Json(new { success = false, message = "La fecha de preinscripción debe ser menor a la del evento." });
             }
 
             // Crea un diccionario con los campos a actualizar
@@ -77,9 +87,8 @@ namespace MESBG.Controllers
             {
                 { "Titulo", evento.Titulo },
                 { "Descripcion", evento.Descripcion },
-                { "Fecha", evento.Fecha },
-                { "Hora", evento.Hora },
-                { "PeriodoInscripcion", evento.PeriodoInscripcion },
+                { "TimeStampFechaEvento", ConvertDateToTimestamp(fechaEvento.ToUniversalTime()) },
+                { "TimeStampPeriodoInscripcion", ConvertDateToTimestamp(fechaPreinscripcion.ToUniversalTime()) },
                 { "Imagen", evento.Imagen },
                 
             };
@@ -87,8 +96,24 @@ namespace MESBG.Controllers
             await _firebaseManager.ActualizarDocEvento("eventos", evento.Id, actualizacion);
                                     
             return Json(new { success = true, message = "Evento modificado" });
-        }                
+        }
 
+        [HttpGet]
+        public async Task<JsonResult> ObtenerEvento(string idDocumento)
+        {
+            try
+            {
+                Evento? _evento = await _firebaseManager.GetEventoPorId(idDocumento);
+                return Json(new {success=true, evento = _evento });
+            }
+            catch(Exception ex)
+            {
+                return Json(new { success = false, evento = ex });
+            }
+            
+        }
+        
+        
         public async Task<IActionResult> Participantes()
         {
             var modelo = new ParticipantesViewModel();
@@ -96,6 +121,7 @@ namespace MESBG.Controllers
 
             return View("ParticipantesView", modelo);
         }
+
 
         private async Task<List<Participante>> ObtenerListaParticipantes()
         {
@@ -128,6 +154,7 @@ namespace MESBG.Controllers
             {
                 return Json(new { success = false, message = "El nick ya está en uso" });
             }
+
             await _firebaseManager.CrearDocParticipante("participantes", participante);
             // Si hay errores de validación, vuelve a mostrar la vista actual
             return Json(new { success = true, message = "Jugador añadido" });
@@ -149,8 +176,8 @@ namespace MESBG.Controllers
             
             var actualizacion = new Dictionary<string, object>
             {
-                { "Nombre", participante?.Nombre },
-                { "Nick", participante?.Nick },
+                { "Nombre", participante.Nombre },
+                { "Nick", participante.Nick },
                 { "Bando", participante.Bando },
                 { "PagoAbonado", participante.PagoAbonado },
                 { "ListaEnviada", participante.ListaEnviada },
@@ -316,10 +343,16 @@ namespace MESBG.Controllers
             return View("EscenariosView", viewModel);
         }
 
-        
+        private static DateTime ConvertDateStringToDateTime(string date, string hour)
+        {
+            return DateTime.ParseExact(date + " " + hour, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        }
 
+        private static Timestamp ConvertDateToTimestamp(DateTime date)
+        {
+            return Timestamp.FromDateTime(date.ToUniversalTime());
+        }
     }
-
 }
 
 
